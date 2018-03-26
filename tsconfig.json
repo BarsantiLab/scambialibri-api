@@ -1,0 +1,21 @@
+{
+    "buildOnSave": false,
+    "compileOnSave": false,
+    "compilerOptions": {
+        "alwaysStrict": true,
+        "baseUrl": "./src",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "sourceMap": true,
+        "target": "es6",
+        "typeRoots": ["./typings/modules", "./typings/globals"],
+        "types": ["node", "reflect-metadata"]
+    },
+    "include":[
+        "src/**/*"
+    ]
+}

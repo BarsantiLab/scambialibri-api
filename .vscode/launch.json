@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "HTTP API",
+        "type": "node",
+        "request": "launch",
+        "outFiles": ["${workspaceRoot}/release/js/**/*.js"],
+        "program": "${workspaceRoot}/src/bin/server.ts",
+        "stopOnEntry": false,
+        "args": [],
+        "cwd": "${workspaceRoot}",
+        "runtimeExecutable": null,
+        "runtimeArgs": [
+            "--nolazy"
+        ],
+        "env": {
+            "NODE_ENV": "development"
+        },
+        "console": "internalConsole",
+        "sourceMaps": true
+    }, {
+        "name": "Current TS File",
+        "type": "node",
+        "request": "launch",
+        "args": ["${relativeFile}"],
+        "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+        "sourceMaps": true,
+        "cwd": "${workspaceRoot}",
+        "protocol": "inspector",
+    }]
+}

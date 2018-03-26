@@ -1,0 +1,3 @@
+npm i app-module-path bcrypt body-parser compression cors expect.js express express-winston helmet inversify joi lodash moment mongoose passport passport-http-bearer passport-local pow-mongoose-fixtures reflect-metadata supertest uuid winston
+npm i --save-dev gulp gulp-apidoc gulp-clean gulp-copy gulp-sourcemaps gulp-spawn-mocha gulp-tslint gulp-typescript merge2 mocha tslint typescript
+npm i --save-dev @types/bcrypt @types/body-parser @types/cors @types/expect.js @types/express @types/helmet @types/joi @types/minimist @types/mocha @types/mongoose @types/passport @types/passport-http-bearer @types/passport-local @types/supertest @types/winston @types/lodash @types/moment

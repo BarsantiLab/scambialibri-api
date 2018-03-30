@@ -87,5 +87,11 @@ export class UserRoute {
             this._validator.getUserSchool,
             this._ctrl.getUserSchool.bind(this._ctrl)
         );
+
+        // TODO: add docs
+        router.post('/user/onboarding',
+            this._validator.completeOnboarding,
+            this._ctrl.completeOnboarding.bind(this._ctrl)
+        );
     }
 }

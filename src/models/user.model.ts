@@ -94,11 +94,13 @@ export class UserSchema extends mongoose.Schema implements IUser {
                 ref: 'Specialization'
             },
 
+            // TODO: rename to grade
             currentClass: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Class'
             },
 
+            // TODO: rename to grade
             futureClass: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Class'

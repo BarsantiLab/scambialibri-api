@@ -14,6 +14,8 @@
   "devDependencies": {
     "@types/mongoose": "^4.7.28",
     "@types/node": "^8.0.54",
+    "@types/request": "^2.47.0",
+    "@types/request-promise-native": "^1.0.14",
     "async": "^2.6.0",
     "autoprefixer": "^8.1.0",
     "gulp": "^3.9.1",
@@ -52,6 +54,8 @@
     "passport-http-bearer": "^1.0.1",
     "passport-local": "^1.0.0",
     "pow-mongoose-fixtures": "^0.3.0",
-    "reflect-metadata": "^0.1.10"
+    "reflect-metadata": "^0.1.10",
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5"
   }
 }

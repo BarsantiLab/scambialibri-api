@@ -9,6 +9,11 @@ const defaultConf = {
         sendStackToClient: true
     },
 
+    google: {
+        geoUrl: 'https://maps.googleapis.com/maps/api/geocode/json',
+        token: 'AIzaSyDassqWcpf1kl0v4_T8ZiVtgOZYatrLs3w'
+    },
+
     http: {
         port: 1337
     },
@@ -53,6 +58,11 @@ export class Configuration {
         timestamp: boolean;
         level: string;
         http: boolean;
+    };
+
+    google: {
+        geoUrl: string;
+        token: string;
     };
 
     mail: {

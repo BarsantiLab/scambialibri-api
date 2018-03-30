@@ -41,4 +41,9 @@ export class UserValidator {
     getUserSchool(req, res, next) {
         next();
     }
+
+    // TODO: add validation
+    completeOnboarding(req, res, next) {
+        next();
+    }
 }

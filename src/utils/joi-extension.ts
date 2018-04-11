@@ -38,6 +38,17 @@ export const Joi = JoiPristine.extend(joi => ({
 
             return value;
         }
+    }, {
+        name: 'bookStatus',
+        validate(params, value, state, options) {
+            if (['new', 'pencilNotes', 'penNoted', 'badConditions'].indexOf(value) === -1) {
+                this.createError('string.bookStatus', {
+                    v: value
+                }, state, options);
+            }
+
+            return value;
+        }
     }]
 }));
 
@@ -48,7 +59,7 @@ export const Joi = JoiPristine.extend(joi => ({
  * @param {(IValidationStep|IValidationStep[])} steps Step di validazione. Può essere un singolo oggetto ValidationStep oppure un array.
  * @param {any} [callback] Callback opzionale chiamata al successo della validazione
  */
-export function validate(steps: IValidationStep|IValidationStep[], callback?) {
+export function validate(steps: IValidationStep|IValidationStep[], callback?: any) {
     if (!_.isArray(steps)) steps = [(steps as IValidationStep)];
     let errors = [];
 

@@ -9,6 +9,7 @@ export class TransactionValidator {
             schema: Joi.object().keys({
                 book: Joi.string().objectId().required(),
                 mode: Joi.string().bookMode().required(),
+                bookStatus: Joi.string().bookStatus().required(),
                 additionalMaterial: Joi.boolean()
             })
         }, next);

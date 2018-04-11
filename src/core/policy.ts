@@ -3,9 +3,7 @@ import { injectable } from 'inversify';
 import * as express from 'express';
 import * as passport from 'passport';
 
-import { UserRole } from 'models/user.model';
-
-export enum Roles {
+export enum Role {
     authenticated,
     administrator,
     user
@@ -13,7 +11,7 @@ export enum Roles {
 
 @injectable()
 export class Policy {
-    is(role: Roles): express.Handler {
+    is(role: Role): express.Handler {
         return (req, res, next) => {
             this
                 ._isRoleValid(req, res, role)
@@ -33,7 +31,7 @@ export class Policy {
     private _isAdministrator(req, res): Promise<any> {
         return new Promise((resolve, reject) => {
             passport.authenticate('bearer')(req, res, () => {
-                if (req.user.role !== UserRole.administrator) reject({ status: 403 });
+                if (req.user.role !== Role.administrator) reject({ status: 403 });
                 else resolve();
             });
         });
@@ -42,17 +40,17 @@ export class Policy {
     private _isUser(req, res): Promise<any> {
         return new Promise((resolve, reject) => {
             passport.authenticate('bearer')(req, res, () => {
-                if (req.user.role !== UserRole.user) reject({ status: 403 });
+                if (req.user.role !== Role.user) reject({ status: 403 });
                 else resolve();
             });
         });
     }
 
-    private _isRoleValid(req, res, role: Roles): Promise<boolean> {
+    private _isRoleValid(req, res, role: Role): Promise<boolean> {
         switch (role) {
-            case Roles.authenticated: return this._isAuthenticated(req, res);
-            case Roles.administrator: return this._isAdministrator(req, res);
-            case Roles.user: return this._isUser(req, res);
+            case Role.authenticated: return this._isAuthenticated(req, res);
+            case Role.administrator: return this._isAdministrator(req, res);
+            case Role.user: return this._isUser(req, res);
             default: throw Error('Invalid role ' + role);
         }
     }

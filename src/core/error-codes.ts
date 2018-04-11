@@ -1,12 +1,20 @@
 export enum ErrorCode {
     Unauthorized,
-    UserNotFound,
     UserInvalidPassword,
     DuplicateMail,
+    OnboardingAlreadyCompleted,
+
+    UserNotFound,
     SchoolNotFound,
+    BookNotFound,
+    GradeNotFound,
+    TransactionNotFound,
+    SpecializationNotRelatedToSchool,
+    GradeNotRelatedToSpecializationOrSchool,
 
     EndpointNotFound,
     ValidationError,
+    UnreachableExternalAPI,
     InternalServerError
 }
 
@@ -60,6 +68,11 @@ const errors: IErrorCodeObject[] = [{
     message: 'Duplicate e-mail address',
     status: 400
 }, {
+    code: 1006,
+    label: ErrorCode.OnboardingAlreadyCompleted,
+    message: 'Onboarding already completed',
+    status: 400
+}, {
     code: 2001,
     label: ErrorCode.SchoolNotFound,
     message: 'School not found',
@@ -79,6 +92,36 @@ const errors: IErrorCodeObject[] = [{
     label: ErrorCode.Unauthorized,
     message: 'Unauthorized',
     status: 401
+}, {
+    code: 3001,
+    label: ErrorCode.BookNotFound,
+    message: 'Book not found',
+    status: 404
+}, {
+    code: 3002,
+    label: ErrorCode.TransactionNotFound,
+    message: 'Transaction not found',
+    status: 404
+}, {
+    code: 3003,
+    label: ErrorCode.SpecializationNotRelatedToSchool,
+    message: 'Specialization not related to school',
+    status: 400
+}, {
+    code: 3004,
+    label: ErrorCode.GradeNotRelatedToSpecializationOrSchool,
+    message: 'Grade not related to specialization or school',
+    status: 400
+}, {
+    code: 3005,
+    label: ErrorCode.GradeNotFound,
+    message: 'Grade not found',
+    status: 404
+}, {
+    code: 9996,
+    label: ErrorCode.UnreachableExternalAPI,
+    message: 'Unreachable external API',
+    status: 400
 }];
 
 for (const error of errors) {

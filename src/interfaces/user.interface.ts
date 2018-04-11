@@ -26,10 +26,9 @@ export interface IUser {
 
     school: ISchool;
     specialization: ISpecialization;
-    currentClass: IGrade;
-    futureClass: IGrade;
+    currentGrade: IGrade;
+    futureGrade: IGrade;
 
-    // TODO: move to proper interface
     coords: number[];
 
     transactions: ITransaction[];

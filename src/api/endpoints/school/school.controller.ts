@@ -41,7 +41,7 @@ export class SchoolController {
         }
     }
 
-    async getClasses(req, res, next) {
+    async getGrades(req, res, next) {
         try {
             const grades: IGrade[] = await Grade.find({
                 school: req.params.school,
@@ -52,6 +52,23 @@ export class SchoolController {
                 id: e._id.toString(),
                 year: e.year,
                 section: e.section
+            })));
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async prepareGradeFilter(req, res, next) {
+        try {
+            const grades: IGrade[] = await Grade.find({
+                school: req.params.school
+            }).populate('specialization').exec();
+
+            res.send(grades.map((e: IGrade) => ({
+                id: (e as any)._id.toString(),
+                year: e.year,
+                section: e.section,
+                specializationName: e.specialization.name
             })));
         } catch (err) {
             next(err);

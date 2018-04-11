@@ -98,6 +98,11 @@ export class ResponseService {
     }
 
     notFount(err, req, res, next) {
-        res.status(404).send();
+        res.status(404).send({
+            code: err.code,
+            data: err.data,
+            message: err.message,
+            stack: this._config.debug.sendStackToClient ? err.stack : undefined
+        });
     }
 }

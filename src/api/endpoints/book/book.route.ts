@@ -4,7 +4,7 @@ import { injectable } from 'inversify';
 import { BookController } from './book.controller';
 import { BookValidator } from './book.validator';
 
-import { Policy, Roles } from 'core/policy';
+import { Policy, Role } from 'core/policy';
 
 @injectable()
 export class BookRoute {
@@ -16,15 +16,9 @@ export class BookRoute {
 
     setupRoutes(router: Router) {
         router.get('/book',
-            this._policy.is(Roles.authenticated),
+            this._policy.is(Role.authenticated),
             this._validator.getBooks,
             this._ctrl.getBooks.bind(this._ctrl)
-        );
-
-        router.get('/book/:id/instances',
-            this._policy.is(Roles.authenticated),
-            this._validator.getInstances,
-            this._ctrl.getInstances.bind(this._ctrl)
         );
     }
 }

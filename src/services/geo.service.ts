@@ -25,8 +25,7 @@ export class GeoService {
             return JSON.parse(geoObj);
         } catch (err) {
             if (err instanceof requestErrors.StatusCodeError) {
-                // TODO: replace with proper error (unreachable api)
-                throw new ApiError(ErrorCode.InternalServerError);
+                throw new ApiError(ErrorCode.UnreachableExternalAPI);
             }
 
             throw err;

@@ -17,7 +17,7 @@ import { User } from 'models/user.model';
 import * as bcrypt from 'bcrypt';
 import * as passport from 'passport';
 import { hashPassword, uuid } from 'utils/crypt';
-import { Roles } from './policy';
+import { Role } from './policy';
 
 @injectable()
 export class PassportConfiguration {
@@ -81,7 +81,7 @@ export class PassportConfiguration {
                     mail,
                     password: hashPassword(pass),
                     confirmationToken: uuid(32),
-                    role: Roles.user
+                    role: Role.user
                 }).save();
 
                 done(null, newUser);

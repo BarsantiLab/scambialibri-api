@@ -13,7 +13,6 @@ export class SchoolRoute {
 
     setupRoutes(router: Router) {
         router.get('/school',
-            this._validator.getSchools,
             this._ctrl.getSchools.bind(this._ctrl)
         );
 
@@ -22,9 +21,14 @@ export class SchoolRoute {
             this._ctrl.getSpecialization.bind(this._ctrl)
         );
 
-        router.get('/school/:school/specialization/:spec/class',
-            this._validator.getClasses,
-            this._ctrl.getClasses.bind(this._ctrl)
+        router.get('/school/:school/specialization/:spec/grade',
+            this._validator.getGrades,
+            this._ctrl.getGrades.bind(this._ctrl)
+        );
+
+        router.get('/school/:school/grade/prepare',
+            this._validator.prepareGradeFilter,
+            this._ctrl.prepareGradeFilter.bind(this._ctrl)
         );
     }
 }

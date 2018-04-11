@@ -1,19 +1,33 @@
 import { injectable } from 'inversify';
+import { Joi, validate } from 'utils/joi-extension';
 
 @injectable()
 export class SchoolValidator {
-    // TODO: complete validation
-    getSchools(req, res, next) {
-        next();
-    }
-
-    // TODO: complete validation
     getSpecializations(req, res, next) {
-        next();
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                id: Joi.string().objectId()
+            })
+        }, next);
     }
 
-    // TODO: complete validation
-    getClasses(req, res, next) {
-        next();
+    getGrades(req, res, next) {
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                school: Joi.string().objectId(),
+                spec: Joi.string().objectId()
+            })
+        }, next);
+    }
+
+    prepareGradeFilter(req, res, next) {
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                school: Joi.string().objectId()
+            })
+        }, next);
     }
 }

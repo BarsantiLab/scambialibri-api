@@ -6,9 +6,19 @@ export class TransactionValidator {
     createTransaction(req, res, next) {
         validate({
             object: req.body,
-            schema: Joi().object().keys({
-                book: Joi().string().objectId().required(),
-                mode: Joi().string().bookMode().required()
+            schema: Joi.object().keys({
+                book: Joi.string().objectId().required(),
+                mode: Joi.string().bookMode().required(),
+                additionalMaterial: Joi.boolean()
+            })
+        }, next);
+    }
+
+    cancelTransaction(req, res, next) {
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                id: Joi.string().objectId().required()
             })
         }, next);
     }

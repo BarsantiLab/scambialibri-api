@@ -4,7 +4,7 @@ import { injectable } from 'inversify';
 import { UserValidator } from './user.validator';
 
 import { UserController } from 'api/endpoints/user/user.controller';
-import { Policy, Roles } from 'core/policy';
+import { Policy, Role } from 'core/policy';
 
 @injectable()
 export class UserRoute {
@@ -76,14 +76,14 @@ export class UserRoute {
 
         // TODO: add docs
         router.get('/user/:id',
-            this._policy.is(Roles.authenticated),
+            this._policy.is(Role.authenticated),
             this._validator.getUser,
             this._ctrl.getUser.bind(this._ctrl)
         );
 
         // TODO: add docs
         router.get('/user/:id/school',
-            this._policy.is(Roles.authenticated),
+            this._policy.is(Role.authenticated),
             this._validator.getUserSchool,
             this._ctrl.getUserSchool.bind(this._ctrl)
         );
@@ -92,6 +92,12 @@ export class UserRoute {
         router.post('/user/onboarding',
             this._validator.completeOnboarding,
             this._ctrl.completeOnboarding.bind(this._ctrl)
+        );
+
+        // TODO: add docs
+        router.get('/user/:id/grade',
+            this._validator.getUserGrade,
+            this._ctrl.getUserGrade.bind(this._ctrl)
         );
     }
 }

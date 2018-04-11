@@ -38,6 +38,8 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
+    "@types/bcrypt": "^1.0.0",
+    "@types/passport": "^0.4.4",
     "app-module-path": "^2.2.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",

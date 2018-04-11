@@ -3,40 +3,57 @@ import * as mongoose from 'mongoose';
 import { injectable } from 'inversify';
 
 import { IBook } from 'interfaces/book.interface';
+import { ITransaction } from 'interfaces/transaction.interface';
+
 import { Book } from 'models/book.model';
+import { Transaction } from 'models/transaction.model';
 
 @injectable()
 export class BookController {
     async getBooks(req, res, next) {
         const filterObj: any = {};
-        if (req.query.class) filterObj.classes = new mongoose.Types.ObjectId(req.query.class);
+        if (req.query.grade) filterObj.grades = new mongoose.Types.ObjectId(req.query.grade);
 
         try {
             const books: IBook[] = await Book.find(filterObj).exec();
+            const booksOut: any[] = [];
 
-            res.send(books.map((book: IBook) => {
-                // TODO: add transaction data
+            const queryObj: any = {};
+            if (req.query.mode === 'sell') queryObj.seller = req.user._id;
+            else queryObj.buyer = req.user._id;
 
-                return {
+            for (const book of books) {
+                const outObj: any = {
                     id: (book as any)._id.toString(),
 
                     isbn: book.isbn,
                     price: book.price,
                     author: book.author,
                     title: book.title,
-                    subtitle: book.subtitle
+                    subtitle: book.subtitle,
                 };
-            }));
+
+                const trans: ITransaction = await Transaction.findOne({
+                    ...queryObj,
+                    book: (book as any)._id
+                });
+
+                if (trans) {
+                    outObj.transaction = {
+                        id: (trans as any)._id.toString(),
+                        bookStatus: trans.bookStatus,
+                        additionalMaterial: trans.additionalMaterial
+                    };
+                } else {
+                    outObj.transaction = {};
+                }
+
+                booksOut.push(outObj);
+            }
+
+            res.send(booksOut);
         } catch (err) {
             next(err);
         }
-    }
-
-    async getInstances(req, res, next) {
-        // const filterObj: any = {};
-
-        // if (req.query.mode === 'buy') {
-
-        // }
     }
 }

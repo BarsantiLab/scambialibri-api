@@ -26,7 +26,6 @@ export class RouterFactory {
         this._transactionRoute.setupRoutes(this.router);
         this._userRoute.setupRoutes(this.router);
 
-        // TODO: fix empty response
         this.router.all('*', (req, res, next) => {
             next(new ApiError(ErrorCode.EndpointNotFound));
         });

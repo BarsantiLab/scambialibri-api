@@ -15,12 +15,14 @@ import { School } from 'models/school.model';
 import { Specialization } from 'models/specialiazion.model';
 import { User } from 'models/user.model';
 
+import { GeoService } from 'services/geo.service';
 import { MailService } from 'services/mail.service';
 
 @injectable()
 export class UserController {
     constructor(
-        private _mailService: MailService
+        private _mail: MailService,
+        private _geo: GeoService
     ) { }
 
     login(req: IRequestSessionHandler, res, next) {
@@ -50,7 +52,7 @@ export class UserController {
                     throw new ApiError(ErrorCode.InternalServerError, err);
                 }
 
-                await this._mailService.send({
+                await this._mail.send({
                     template: 'confirm-account',
                     to: user.mail,
                     subject: 'Scambialibri.it - conferma account',
@@ -68,16 +70,14 @@ export class UserController {
 
     async completeOnboarding(req, res, next) {
         try {
-            console.log(req.query);
             const user: IUser = await User.findOne({ confirmationToken: req.query.token });
-            // TODO: set proper error code
-            if (!user) throw new ApiError(ErrorCode.InternalServerError, 'User not found');
+            if (!user) throw new ApiError(ErrorCode.UserNotFound);
+            if (user.onboardingCompleted) throw new ApiError(ErrorCode.OnboardingAlreadyCompleted);
 
             const school: ISchool = await School.findById(req.body.school);
             const spec: ISpecialization = await Specialization.findById(req.body.specialization);
-            const grade: IGrade = await Grade.findById(req.body.class);
+            const grade: IGrade = await Grade.findById(req.body.grade);
 
-            // TODO: req.body.class => req.body.grade
             const futureGrade: IGrade = await Grade.findOne({
                 specialization: (spec as any)._id,
                 school: (school as any)._id,
@@ -85,18 +85,26 @@ export class UserController {
                 year: grade.year + 1
             });
 
-            // TODO: set proper error code
+            if (!grade) {
+                throw new ApiError(ErrorCode.GradeNotFound, {
+                    grade: req.body.grade
+                });
+            }
+
             if (!(spec as any).school.equals((school as any)._id)) {
-                throw new ApiError(ErrorCode.InternalServerError, 'Specialization is not related to School');
+                throw new ApiError(ErrorCode.SpecializationNotRelatedToSchool, {
+                    specialiazion: (spec as any)._id.toString(),
+                    school: (school as any)._id.toString()
+                });
             }
 
-            // TODO: test
-            // TODO: set proper error code
             if (!(grade as any).school.equals((school as any)._id) || !(grade as any).specialization.equals((spec as any)._id)) {
-                throw new ApiError(ErrorCode.InternalServerError, 'Grade is not related to School or Specialization');
+                throw new ApiError(ErrorCode.GradeNotRelatedToSpecializationOrSchool, {
+                    grade: (grade as any)._id.toString(),
+                    specialiazion: (spec as any)._id.toString(),
+                    school: (school as any)._id.toString()
+                });
             }
-
-            // TODO: check if grade exists
 
             user.firstName = req.body.firstName;
             user.lastName = req.body.lastName;
@@ -108,13 +116,16 @@ export class UserController {
 
             user.school = (school as any)._id;
             user.specialization = (spec as any)._id;
-            user.currentClass = (grade as any)._id;
+            user.currentGrade = (grade as any)._id;
 
-            if (futureGrade) user.futureClass = (futureGrade as any)._id;
+            if (futureGrade) user.futureGrade = (futureGrade as any)._id;
 
             user.onboardingCompleted = true;
 
-            // TODO: add geo service
+            // TODO: test this
+            const geoData = await this._geo.geocode(`${user.address}, ${user.zipCode} ${user.city} (${user.province})`);
+            const loc = geoData.results[0].geometry.location;
+            user.coords = [loc.lng, loc.lat];
 
             console.log((user as any)._id);
             await User.findByIdAndUpdate((user as any)._id, user);
@@ -124,13 +135,10 @@ export class UserController {
         }
     }
 
-    // TODO: if user is not admin show only own data
     async getUser(req, res, next) {
         try {
             const user: IUser = await User.findById(req.params.id).populate(req.query.populate);
-
-            // TODO: replace with proper error
-            if (!user) throw new ApiError(ErrorCode.InternalServerError, { id: req.params.id });
+            if (!user) throw new ApiError(ErrorCode.UserNotFound, { id: req.params.id });
 
             // TODO: sanitize output
             res.send(user);
@@ -139,31 +147,42 @@ export class UserController {
         }
     }
 
-    // TODO: if user is not admin show only own data
     async getUserSchool(req, res, next) {
         try {
             const user: any = await User.findById(req.params.id);
-            // TODO: send proper error
-            if (!user) throw new ApiError(ErrorCode.InternalServerError, { id: req.params.id });
+            if (!user) throw new ApiError(ErrorCode.UserNotFound, { user: req.params.id });
 
-            console.log('====================================');
-            console.log(user);
-            console.log('====================================');
-            console.log(user.school);
-            console.log('====================================');
             const school: ISchool = await School.findById(user.school);
-            // TODO: send proper error
-            if (!school) throw new ApiError(ErrorCode.InternalServerError, { id: user.school });
+            if (!school) throw new ApiError(ErrorCode.SchoolNotFound, { school: user.school });
 
-            // TODO: sanitize
-            res.send(school);
+            res.send({
+                id: (school as any)._id.toString(),
+                name: school.name
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getUserGrade(req, res, next) {
+        try {
+            const user: any = await User.findById(req.params.id);
+            if (!user) throw new ApiError(ErrorCode.UserNotFound, { id: req.params.id });
+
+            const grade: IGrade = await Grade.findById(user.currentGrade);
+            if (!grade) throw new ApiError(ErrorCode.GradeNotFound, { grade: user.currentGrade });
+
+            res.send({
+                id: (grade as any)._id.toString(),
+                year: grade.year,
+                section: grade.section
+            });
         } catch (err) {
             next(err);
         }
     }
 }
 
-// TODO: move to appropriate API call
 // import { User, UserRole } from 'models/user.model';
 // import { hashPassword } from 'utils/crypt';
 

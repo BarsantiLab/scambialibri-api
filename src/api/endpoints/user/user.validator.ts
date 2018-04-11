@@ -1,49 +1,80 @@
 import { injectable } from 'inversify';
-
-// import { Joi, validate } from 'utils/joi-extension';
+import { Joi, validate } from 'utils/joi-extension';
 
 @injectable()
 export class UserValidator {
     login(req, res, next) {
-        // TODO: fix!
-
-        // validate({
-        //     object: req.body,
-        //     schema: Joi().object().keys({
-        //         mail: Joi().string().email().required(),
-        //         password: Joi().string().required()
-        //     })
-        // }, next);
-
-        next();
+        validate({
+            object: req.body,
+            schema: Joi.object().keys({
+                mail: Joi.string().email().required(),
+                password: Joi.string().required()
+            })
+        }, next);
     }
 
     signup(req, res, next) {
-        // TODO: fix error!
-
-        // validate({
-        //     object: req.body,
-        //     schema: Joi().object().keys({
-        //         mail: Joi().string().email().required(),
-        //         password: Joi().string().required()
-        //     })
-        // }, next);
-
-        next();
+        validate({
+            object: req.body,
+            schema: Joi.object().keys({
+                mail: Joi.string().email().required(),
+                password: Joi.string().required()
+            })
+        }, next);
     }
 
-    // TODO: add validation
     getUser(req, res, next) {
-        next();
+        validate([{
+            object: req.params,
+            schema: Joi.object().keys({
+                id: Joi.string().objectId().required()
+            })
+        }, {
+            object: req.query,
+            schema: Joi.object().keys({
+                populate: Joi.array().items(Joi.string())
+            })
+        }], next);
     }
 
-    // TODO: add validation
     getUserSchool(req, res, next) {
-        next();
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                id: Joi.string().objectId().required()
+            })
+        }, next);
     }
 
-    // TODO: add validation
     completeOnboarding(req, res, next) {
-        next();
+        validate([{
+            object: req.query,
+            schema: Joi.object().keys({
+                token: Joi.string().required()
+            })
+        }, {
+            object: req.body,
+            schema: Joi.object().keys({
+                school: Joi.string().objectId().required(),
+                specialization: Joi.string().objectId().required(),
+                grade: Joi.string().objectId().required(),
+                firstName: Joi.string().required(),
+                lastName: Joi.string().required(),
+                phone: Joi.string().required(),
+                address: Joi.string().required(),
+                city: Joi.string().required(),
+                zipCode: Joi.string().required(),
+                province: Joi.string().required(),
+            })
+        }], next);
+    }
+
+    getUserGrade(req, res, next) {
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                id: Joi.string().objectId().required()
+            })
+        }, next);
     }
 }

@@ -11,7 +11,6 @@ export enum UserRole {
     user = 1
 }
 
-// TODO: rename current/next class => grade
 export class UserSchema extends mongoose.Schema implements IUser {
     mail: string;
     password: string;
@@ -31,8 +30,8 @@ export class UserSchema extends mongoose.Schema implements IUser {
 
     school: ISchool;
     specialization: ISpecialization;
-    currentClass: IGrade;
-    futureClass: IGrade;
+    currentGrade: IGrade;
+    futureGrade: IGrade;
 
     coords: number[];
 
@@ -94,16 +93,14 @@ export class UserSchema extends mongoose.Schema implements IUser {
                 ref: 'Specialization'
             },
 
-            // TODO: rename to grade
-            currentClass: {
+            currentGrade: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Class'
+                ref: 'Grade'
             },
 
-            // TODO: rename to grade
-            futureClass: {
+            futureGrade: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Class'
+                ref: 'Grade'
             },
 
             coords: {

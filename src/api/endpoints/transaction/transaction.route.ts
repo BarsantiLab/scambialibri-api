@@ -26,5 +26,15 @@ export class TransactionRoute {
             this._validator.cancelTransaction,
             this._ctrl.cancelTransaction.bind(this._ctrl)
         );
+
+        router.get('/transaction/purchases',
+            this._policy.is(Role.authenticated),
+            this._ctrl.getPurchases.bind(this._ctrl)
+        );
+
+        router.get('/transaction/sales',
+            this._policy.is(Role.authenticated),
+            this._ctrl.getSales.bind(this._ctrl)
+        );
     }
 }

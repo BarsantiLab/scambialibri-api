@@ -5,9 +5,9 @@ import { IMessage } from './message.interface';
 import { BookStatus, IUser } from './user.interface';
 
 export enum TransactionStatus {
-    active,
-    completed,
-    cancelled
+    active = 'active',
+    completed = 'completed',
+    cancelled = 'cancelled'
 }
 
 export interface ITransaction {

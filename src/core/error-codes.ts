@@ -11,6 +11,7 @@ export enum ErrorCode {
     TransactionNotFound,
     SpecializationNotRelatedToSchool,
     GradeNotRelatedToSpecializationOrSchool,
+    DuplicateTransaction,
 
     EndpointNotFound,
     ValidationError,
@@ -117,6 +118,11 @@ const errors: IErrorCodeObject[] = [{
     label: ErrorCode.GradeNotFound,
     message: 'Grade not found',
     status: 404
+}, {
+    code: 3006,
+    label: ErrorCode.DuplicateTransaction,
+    message: 'Duplicate transaction',
+    status: 400
 }, {
     code: 9996,
     label: ErrorCode.UnreachableExternalAPI,

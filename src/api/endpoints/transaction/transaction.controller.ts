@@ -16,8 +16,14 @@ export class TransactionController {
             const book: IBook = await Book.findById(req.body.book);
             if (!book) throw new ApiError(ErrorCode.BookNotFound, { id: req.body.book });
 
-            const transaction: ITransaction = await Transaction.findOne({ book: req.body.book });
-            if (transaction) throw new ApiError(ErrorCode.TransactionNotFound, { id: (transaction as any)._id.toString() });
+            const transaction: ITransaction = await Transaction.findOne({
+                book: req.body.book,
+                user: req.user._id
+            });
+
+            if (transaction) throw new ApiError(ErrorCode.DuplicateTransaction, {
+                transaction: (transaction as any)._id.toString()
+            });
 
             const transactionData: any = {
                 book: mongoose.Types.ObjectId(req.body.book),
@@ -63,5 +69,57 @@ export class TransactionController {
         } catch (err) {
             next(err);
         }
+    }
+
+    async getPurchases(req, res, next) {
+        try {
+            const purchases: ITransaction[] = await Transaction.find({
+                buyer: req.user._id
+            }).populate('book').exec();
+
+            const out = [];
+
+            for (const trans of purchases) {
+                const sales: ITransaction[] = await Transaction.find({
+                    book: (trans.book as any)._id,
+                    _id: {
+                        $ne: (trans as any)._id
+                    },
+                    seller: {
+                        $ne: null
+                    }
+                }).populate('seller').exec();
+
+                out.push({
+                    id: (trans as any)._id.toString(),
+
+                    book: {
+                        author: trans.book.author,
+                        isbn: trans.book.isbn,
+                        title: trans.book.title,
+                        subtitle: trans.book.subtitle
+                    },
+
+                    sales: sales.map(sale => ({
+                        id: (sale as any)._id.toString(),
+                        status: sale.status,
+                        bookStatus: sale.bookStatus,
+                        additionalMaterial: sale.additionalMaterial || false,
+                        seller: {
+                            firstName: sale.seller.firstName,
+                            lastName: sale.seller.lastName
+                        }
+                    }))
+                });
+            }
+
+            res.send(out);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getSales(req, res, next) {
+        res.sendStatus(418);
     }
 }

@@ -5,15 +5,19 @@ import { IMessage } from './message.interface';
 import { BookStatus, IUser } from './user.interface';
 
 export enum TransactionStatus {
-    active = 'active',
-    completed = 'completed',
-    cancelled = 'cancelled'
+    free = 'free',
+    pending = 'pending',
+    closed = 'closed',
+    notResponding = 'notResponding'
 }
 
 export interface ITransaction {
     status: TransactionStatus;
     seller: IUser;
     buyer: IUser;
+
+    paired: ITransaction;
+    pairingDate: Date;
 
     book: IBook;
     bookStatus: BookStatus;

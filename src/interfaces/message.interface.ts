@@ -1,12 +1,10 @@
 import { Document } from 'mongoose';
 
 import { ITransaction } from './transaction.interface';
-import { IUser } from './user.interface';
 
 export interface IMessage {
-    transaction: ITransaction;
-    from: IUser;
-    to: IUser;
+    from: ITransaction;
+    to: ITransaction;
 
     content: string;
     date: Date;

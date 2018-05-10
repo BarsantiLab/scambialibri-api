@@ -12,6 +12,8 @@ export enum ErrorCode {
     SpecializationNotRelatedToSchool,
     GradeNotRelatedToSpecializationOrSchool,
     DuplicateTransaction,
+    TransactionNotRelatedToUser,
+    BadTransactionStatus,
 
     EndpointNotFound,
     ValidationError,
@@ -122,6 +124,16 @@ const errors: IErrorCodeObject[] = [{
     code: 3006,
     label: ErrorCode.DuplicateTransaction,
     message: 'Duplicate transaction',
+    status: 400
+}, {
+    code: 3007,
+    label: ErrorCode.TransactionNotRelatedToUser,
+    message: 'Transaction not related to user',
+    status: 400
+}, {
+    code: 3008,
+    label: ErrorCode.BadTransactionStatus,
+    message: 'Bad transaction status',
     status: 400
 }, {
     code: 9996,

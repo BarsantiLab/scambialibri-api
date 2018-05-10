@@ -12,6 +12,7 @@
   "author": "Davide Rossetto <davide.ross93@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/moment": "^2.13.0",
     "@types/mongoose": "^4.7.28",
     "@types/node": "^8.0.54",
     "@types/request": "^2.47.0",
@@ -51,6 +52,7 @@
     "inversify": "^4.5.2",
     "joi": "^13.0.2",
     "mailgun-js": "^0.16.0",
+    "moment": "^2.22.1",
     "mongoose": "^4.13.6",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",

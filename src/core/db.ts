@@ -6,9 +6,6 @@ import * as fixtures from 'pow-mongoose-fixtures';
 import { Configuration } from 'core/config';
 import { Logger } from 'core/log';
 
-// import { Episode } from 'models/episode.model';
-// import { Season } from 'models/season.model';
-// import { Show } from 'models/show.model';
 import { Token } from 'models/token.model';
 import { User } from 'models/user.model';
 

@@ -60,5 +60,11 @@ export class TransactionRoute {
             this._validator.reportNotResponding,
             this._ctrl.reportNotResponding.bind(this._ctrl)
         );
+
+        router.post('/transaction/:id/completed',
+            this._policy.is(Role.authenticated),
+            this._validator.reportCompleted,
+            this._ctrl.reportCompleted.bind(this._ctrl)
+        );
     }
 }

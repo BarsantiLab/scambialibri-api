@@ -28,7 +28,7 @@ export class Api {
         private _db: Db,
         private _passport: PassportConfiguration,
         private _route: RouterFactory,
-        private _responseService: ResponseService
+        private _responseService: ResponseService,
     ) { }
 
     async setup(): Promise<any> {

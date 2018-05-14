@@ -12,6 +12,7 @@
   "author": "Davide Rossetto <davide.ross93@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/agenda": "^1.0.3",
     "@types/moment": "^2.13.0",
     "@types/mongoose": "^4.7.28",
     "@types/node": "^8.0.54",
@@ -41,6 +42,7 @@
   "dependencies": {
     "@types/bcrypt": "^1.0.0",
     "@types/passport": "^0.4.4",
+    "agenda": "^1.0.3",
     "app-module-path": "^2.2.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",

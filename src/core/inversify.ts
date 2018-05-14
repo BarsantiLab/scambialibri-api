@@ -6,6 +6,7 @@ import { Logger } from 'core/log';
 import { PassportConfiguration } from 'core/passport';
 import { Policy } from 'core/policy';
 
+import { AgendaService } from 'services/agenda.service';
 import { AuthService } from 'services/auth.service';
 import { GeoService } from 'services/geo.service';
 import { MailService } from 'services/mail.service';
@@ -40,6 +41,7 @@ InversifyContainer.bind<Logger>(Logger).toSelf().inSingletonScope();
 InversifyContainer.bind<PassportConfiguration>(PassportConfiguration).toSelf();
 InversifyContainer.bind<Policy>(Policy).toSelf();
 
+InversifyContainer.bind<AgendaService>(AgendaService).toSelf().inSingletonScope();
 InversifyContainer.bind<AuthService>(AuthService).toSelf();
 InversifyContainer.bind<GeoService>(GeoService).toSelf();
 InversifyContainer.bind<MailService>(MailService).toSelf();

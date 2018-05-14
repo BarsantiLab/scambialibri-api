@@ -11,13 +11,31 @@ import { ITransaction, TransactionStatus } from 'interfaces/transaction.interfac
 import { Book } from 'models/book.model';
 import { Message } from 'models/message.model';
 import { Transaction } from 'models/transaction.model';
+
+import { AgendaService } from 'services/agenda.service';
 import { TransactionService } from 'services/transaction.service';
 
 @injectable()
 export class TransactionController {
     constructor(
+        private _agenda: AgendaService,
         private _transactionService: TransactionService
-    ) { }
+    ) {
+        // TODO: move jobs declaration in dedicated class
+
+        this._agenda.define('closeNotRespondingTransaction', async job => {
+            // TODO: send cancellation mails
+            const trans: ITransaction = await Transaction.findById(job.attrs.data.id);
+            if (trans.status !== TransactionStatus.notResponding) return;
+            this._transactionService.cancelPendingTransaction(trans);
+        });
+
+        this._agenda.define('closeCompletedTransaction', async job => {
+            const trans: ITransaction = await Transaction.findById(job.attrs.data.id);
+            if (trans.status !== TransactionStatus.inCompletion) return;
+            this._transactionService.completeTransaction(trans);
+        });
+    }
 
     async createTransaction(req, res, next) {
         try {
@@ -64,6 +82,8 @@ export class TransactionController {
         try {
             const purchases: ITransaction[] = await Transaction.find({
                 buyer: req.user._id
+            }).sort({
+
             }).populate('book').exec();
 
             const out = [];
@@ -111,7 +131,7 @@ export class TransactionController {
                         path: 'seller',
                         populate: {
                             path: 'school',
-                            model: 'School' // TODO: can I remove it?
+                            model: 'School'
                         }
                     }).exec();
 
@@ -179,7 +199,17 @@ export class TransactionController {
             }
 
             // TODO: sanitization on message
-            // TODO: set transaction status to pending if it's notResponding if the seller is responding
+
+            // TODO: test this
+            if ((trans.seller as any)._id.equals(req.user._id)) {
+                await Transaction.update({
+                    _id: {
+                        $in: [(trans as any)._id, trans.paired]
+                    }
+                }, {
+                    status: TransactionStatus.pending
+                });
+            }
 
             await this._transactionService.sendMessage(trans, req.body.message);
             res.send({ status: 'ok' });
@@ -210,7 +240,7 @@ export class TransactionController {
             } else if (trans.status === TransactionStatus.pending) {
                 await this._transactionService.cancelPendingTransaction(trans);
             } else {
-                // TODO: throw wrong status error
+                throw new ApiError(ErrorCode.BadTransactionStatus, { id: req.params.id });
             }
 
             res.send({ status: 'ok' });
@@ -239,7 +269,23 @@ export class TransactionController {
         }
     }
 
-    async completeTransaction(req, res, next) {
-        res.sendStatus(418);
+    async reportCompleted(req, res, next) {
+        try {
+            const trans: ITransaction = await Transaction.findOne({
+                _id: req.params.id,
+                $or: [{
+                    seller: req.user._id
+                }, {
+                    buyer: req.user._id
+                }]
+            });
+
+            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
+
+            await this._transactionService.reportCompleted(trans);
+            res.send({ status: 'ok' });
+        } catch (err) {
+            next(err);
+        }
     }
 }

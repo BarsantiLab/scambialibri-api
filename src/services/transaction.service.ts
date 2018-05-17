@@ -1,19 +1,19 @@
 import { injectable } from 'inversify';
 
-import { ITransaction, TransactionStatus } from 'interfaces/transaction.interface';
-
 import { ApiError, ErrorCode } from 'core/error-codes';
+
+import { ITransaction, TransactionStatus } from 'interfaces/transaction.interface';
 
 import { Message } from 'models/message.model';
 import { Transaction } from 'models/transaction.model';
 
-import { AgendaService } from './agenda.service';
+import { MailService } from 'services/mail.service';
 
 @injectable()
 export class TransactionService {
 
     constructor(
-        private _agenda: AgendaService
+        private _mail: MailService
     ) { }
 
     async pairTransactions(trans1: ITransaction, trans2: ITransaction): Promise<void> {
@@ -29,15 +29,24 @@ export class TransactionService {
             pairingDate: new Date()
         });
 
-        // TODO: send mails
+        const sellerTrans = await Transaction.findById((trans2 as any)._id).populate('seller book');
+
+        this._mail.send({
+            template: 'new-transaction',
+            to: sellerTrans.seller.mail,
+            subject: 'Nuova transazione',
+            data: {
+                book: sellerTrans.book.title
+            }
+        });
     }
 
-    async sendMessage(transaction: ITransaction, content: string): Promise<void> {
-        const paired: ITransaction = await Transaction.findById(transaction.paired);
+    async sendMessage(transaction: ITransaction, content: string): Promise<boolean> {
+        const paired: ITransaction = await Transaction.findById(transaction.paired).populate('buyer seller book');
 
         const msg = new Message({
             from: transaction.buyer || transaction.seller,
-            to: paired.buyer || paired.seller,
+            to: paired.buyer ? (paired.buyer as any)._id : (paired.seller as any)._id,
             content,
             date: new Date()
         });
@@ -49,6 +58,7 @@ export class TransactionService {
                 $in: [(transaction as any)._id, (paired as any)._id]
             }
         }, {
+            status: TransactionStatus.pending,
             $push: {
                 messages: (msg as any)._id
             }
@@ -56,13 +66,22 @@ export class TransactionService {
             multi: true
         });
 
-        // TODO: send mails
+        this._mail.send({
+            template: 'new-message',
+            to: paired.buyer ? (paired.buyer as any).mail : (paired.seller as any).mail,
+            subject: 'Nuovo messaggio',
+            data: {
+                book: paired.book.title,
+                message: content
+            }
+        });
+
+        return transaction.status === TransactionStatus.notResponding;
     }
 
     async deleteTransaction(transaction: ITransaction): Promise<void> {
-        // TODO: move to ApiError
         if (transaction.status !== TransactionStatus.free) {
-            throw new Error('Transaction is not free');
+            throw new ApiError(ErrorCode.BadTransactionStatus, { id: (transaction as any)._id });
         }
 
         await Message.remove({
@@ -75,12 +94,11 @@ export class TransactionService {
     }
 
     async cancelPendingTransaction(transaction: ITransaction): Promise<void> {
-        // TODO: move to ApiError
         if ((transaction.status !== TransactionStatus.pending && transaction.status !== TransactionStatus.notResponding) || !transaction.paired) {
-            throw new Error('Transaction is not pending or missing paired transaction');
+            throw new ApiError(ErrorCode.BadTransactionStatus, { id: (transaction as any)._id });
         }
 
-        const paired: ITransaction = await Transaction.findById(transaction.paired);
+        const paired: ITransaction = await Transaction.findById(transaction.paired).populate('buyer seller book');
 
         await Message.remove({
             _id: {
@@ -101,52 +119,24 @@ export class TransactionService {
             multi: true
         });
 
-        // TODO: send mails
-    }
-
-    // TODO: move into controller?
-    async reportNotResponding(transaction: ITransaction): Promise<void> {
-        if (transaction.status !== TransactionStatus.pending || !transaction.paired) {
-            throw new ApiError(ErrorCode.BadTransactionStatus, { id: (transaction as any)._id });
-        }
-
-        const paired: ITransaction = await Transaction.findById(transaction.paired);
-
-        await Transaction.update({
-            _id: {
-                $in: [(transaction as any)._id, (paired as any)._id]
+        this._mail.send({
+            template: 'transaction-cancelled',
+            to: transaction.seller ? transaction.seller.mail : transaction.buyer.mail,
+            subject: 'Transazione cancellata',
+            data: {
+                type: transaction.seller ? 'la vendita' : 'l\'acquisto',
+                book: transaction.book.title
             }
-        }, {
-            status: TransactionStatus.notResponding
-        }, {
-            multi: true
         });
 
-        this._agenda.schedule('in 1 day', 'closeNotRespondingTransaction', {
-            id: (transaction as any)._id
-        });
-
-        // TODO: send mails
-    }
-
-    // TODO: move into controller?
-    async reportCompleted(transaction: ITransaction): Promise<void> {
-        if (transaction.status !== TransactionStatus.pending || !transaction.paired) {
-            throw new ApiError(ErrorCode.BadTransactionStatus, { id: (transaction as any)._id });
-        }
-
-        await Transaction.update({
-            _id: {
-                $in: [(transaction as any)._id, transaction.paired]
+        this._mail.send({
+            template: 'transaction-cancelled',
+            to: paired.seller ? paired.seller.mail : paired.buyer.mail,
+            subject: 'Transazione cancellata',
+            data: {
+                type: paired.seller ? 'la vendita' : 'l\'acquisto',
+                book: paired.book.title
             }
-        }, {
-            status: TransactionStatus.inCompletion
-        }, {
-            multi: true
-        });
-
-        this._agenda.schedule('in 1 day', 'closeCompletedTransaction', {
-            id: (transaction as any)._id
         });
     }
 
@@ -165,6 +155,26 @@ export class TransactionService {
             multi: true
         });
 
-        // TODO: send mails
+        const paired = await Transaction.findById(transaction.paired).populate('seller buyer book');
+
+        this._mail.send({
+            template: 'transaction-completed',
+            to: transaction.seller ? transaction.seller.mail : transaction.buyer.mail,
+            subject: 'Transazione completata',
+            data: {
+                type: transaction.seller ? 'la vendita' : 'l\'acquisto',
+                book: transaction.book.title
+            }
+        });
+
+        this._mail.send({
+            template: 'transaction-completed',
+            to: paired.seller ? paired.seller.mail : paired.buyer.mail,
+            subject: 'Transazione completata',
+            data: {
+                type: paired.seller ? 'la vendita' : 'l\'acquisto',
+                book: paired.book.title
+            }
+        });
     }
 }

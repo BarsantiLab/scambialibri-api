@@ -35,7 +35,10 @@ export interface IUser {
 }
 
 export enum BookStatus {
-    new, pencilNotes, penNotes, badConditions
+    new = 'new',
+    pencilNotes = 'pencilNotes',
+    penNotes = 'penNotes',
+    badConditions = 'badConditions'
 }
 
 export interface IUserModel extends IUser, Document { }

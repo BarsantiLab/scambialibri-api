@@ -1,39 +1,49 @@
 import { injectable } from 'inversify';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
+import * as sanitize from 'sanitize-html';
 
 import { ApiError, ErrorCode } from 'core/error-codes';
 
 import { IBook } from 'interfaces/book.interface';
 import { IMessage } from 'interfaces/message.interface';
 import { ITransaction, TransactionStatus } from 'interfaces/transaction.interface';
+import { BookStatus } from 'interfaces/user.interface';
 
 import { Book } from 'models/book.model';
 import { Message } from 'models/message.model';
 import { Transaction } from 'models/transaction.model';
 
 import { AgendaService } from 'services/agenda.service';
+import { MailService } from 'services/mail.service';
 import { TransactionService } from 'services/transaction.service';
+
+// TODO: rework on "not responding" feature: enabled if the transaction last message pushed is older than 24h
+// TODO: add last message pushed date on transaction
+// TODO: fix first report completing mail
 
 @injectable()
 export class TransactionController {
     constructor(
         private _agenda: AgendaService,
+        private _mail: MailService,
         private _transactionService: TransactionService
     ) {
         // TODO: move jobs declaration in dedicated class
 
         this._agenda.define('closeNotRespondingTransaction', async job => {
-            // TODO: send cancellation mails
-            const trans: ITransaction = await Transaction.findById(job.attrs.data.id);
-            if (trans.status !== TransactionStatus.notResponding) return;
+            // TODO: send cancellation mails (to do in service?)
+            const trans: ITransaction = await Transaction.findById(job.attrs.data.id).populate('buyer seller book');
+            if (!trans || trans.status !== TransactionStatus.notResponding) return;
             this._transactionService.cancelPendingTransaction(trans);
         });
 
         this._agenda.define('closeCompletedTransaction', async job => {
-            const trans: ITransaction = await Transaction.findById(job.attrs.data.id);
-            if (trans.status !== TransactionStatus.inCompletion) return;
+            const trans: ITransaction = await Transaction.findById(job.attrs.data.id).populate('buyer seller book');
+            if (!trans || trans.status !== TransactionStatus.inCompletion) return;
             this._transactionService.completeTransaction(trans);
+
+            // TODO: send report to administrator
         });
     }
 
@@ -77,13 +87,77 @@ export class TransactionController {
         }
     }
 
+    async getSales(req, res, next) {
+        try {
+            const sales: ITransaction[] = await Transaction.find({
+                seller: req.user._id
+            }).populate('book').exec();
+
+            const out = [];
+
+            for (const trans of sales) {
+                const tmpObj: any = {
+                    id: (trans as any)._id.toString(),
+                    status: trans.status,
+
+                    book: {
+                        author: trans.book.author,
+                        isbn: trans.book.isbn,
+                        title: trans.book.title,
+                        subtitle: trans.book.subtitle
+                    }
+                };
+
+                if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding || trans.status === TransactionStatus.inCompletion) {
+                    const paired: ITransaction = await Transaction.findById(trans.paired).populate({
+                        path: 'buyer',
+                        populate: {
+                            path: 'school',
+                            model: 'School'
+                        }
+                    }).exec();
+
+                    if (!paired) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: trans.paired });
+
+                    if ((trans.messages as IMessage[]).length === 0 && moment().diff(moment(trans.pairingDate), 'd', true) > 1) {
+                        tmpObj.notRespondingEnabled = true;
+                    }
+
+                    tmpObj.pairedUser = {
+                        firstName: paired.buyer.firstName,
+                        lastName: paired.buyer.lastName,
+                        mail: paired.buyer.mail,
+                        address: paired.buyer.address,
+                        province: paired.buyer.province,
+                        city: paired.buyer.city,
+                        phone: paired.buyer.phone,
+                        schoolName: paired.buyer.school.name
+                    };
+
+                    const messages: IMessage[] = await Message.find({
+                        _id: { $in: trans.messages }
+                    });
+
+                    tmpObj.messages = messages.map((msg: IMessage) => ({
+                        sent: (msg.from as any).equals(req.user._id),
+                        content: msg.content,
+                        date: msg.date
+                    }));
+                }
+
+                out.push(tmpObj);
+            }
+
+            res.send(out);
+        } catch (err) {
+            next(err);
+        }
+    }
+
     async getPurchases(req, res, next) {
-        // TODO: sort buyer transaction
         try {
             const purchases: ITransaction[] = await Transaction.find({
                 buyer: req.user._id
-            }).sort({
-
             }).populate('book').exec();
 
             const out = [];
@@ -112,8 +186,6 @@ export class TransactionController {
                         }
                     }).populate('seller').exec();
 
-                    // TODO: sort sales by points
-
                     tmpObj.sales = sales.map(sale => ({
                         id: (sale as any)._id.toString(),
                         status: sale.status,
@@ -122,11 +194,12 @@ export class TransactionController {
                         seller: {
                             firstName: sale.seller.firstName,
                             lastName: sale.seller.lastName
-                        }
-                    }));
+                        },
+                        points: this._getTransactionPoints(sale)
+                    })).sort((a, b) => b.points - a.points);
                 }
 
-                if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding) {
+                if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding || trans.status === TransactionStatus.inCompletion) {
                     const paired: ITransaction = await Transaction.findById(trans.paired).populate({
                         path: 'seller',
                         populate: {
@@ -198,28 +271,14 @@ export class TransactionController {
                 });
             }
 
-            // TODO: sanitization on message
-
-            // TODO: test this
-            if ((trans.seller as any)._id.equals(req.user._id)) {
-                await Transaction.update({
-                    _id: {
-                        $in: [(trans as any)._id, trans.paired]
-                    }
-                }, {
-                    status: TransactionStatus.pending
-                });
-            }
-
-            await this._transactionService.sendMessage(trans, req.body.message);
-            res.send({ status: 'ok' });
+            const isBackToPending = await this._transactionService.sendMessage(trans, sanitize(req.body.message));
+            res.send({
+                status: 'ok',
+                isBackToPending
+            });
         } catch (err) {
             next(err);
         }
-    }
-
-    async getSales(req, res, next) {
-        res.sendStatus(418);
     }
 
     async cancelTransaction(req, res, next) {
@@ -231,7 +290,7 @@ export class TransactionController {
                 }, {
                     buyer: req.user._id
                 }]
-            });
+            }).populate('seller buyer book');
 
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
 
@@ -258,11 +317,39 @@ export class TransactionController {
                 }, {
                     buyer: req.user._id
                 }]
-            });
+            }).populate('book').exec();
 
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
 
-            await this._transactionService.reportNotResponding(trans);
+            if (trans.status !== TransactionStatus.pending || !trans.paired) {
+                throw new ApiError(ErrorCode.BadTransactionStatus, { id: (trans as any)._id });
+            }
+
+            const paired: ITransaction = await Transaction.findById(trans.paired);
+
+            await Transaction.update({
+                _id: {
+                    $in: [(trans as any)._id, (paired as any)._id]
+                }
+            }, {
+                status: TransactionStatus.notResponding
+            }, {
+                multi: true
+            });
+
+            this._agenda.schedule('in 1 day', 'closeNotRespondingTransaction', {
+                id: (trans as any)._id
+            });
+
+            this._mail.send({
+                template: 'not-responding-followup',
+                to: paired.seller ? paired.seller.mail : paired.buyer.mail,
+                subject: 'Invito di risposta',
+                data: {
+                    book: trans.book.title
+                }
+            });
+
             res.send({ status: 'ok' });
         } catch (err) {
             next(err);
@@ -278,14 +365,52 @@ export class TransactionController {
                 }, {
                     buyer: req.user._id
                 }]
-            });
+            }).populate('buyer seller book');
 
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
 
-            await this._transactionService.reportCompleted(trans);
+            await Transaction.findByIdAndUpdate(req.params.id, {
+                status: TransactionStatus.inCompletion
+            });
+
+            const paired: ITransaction = await Transaction.findById(trans.paired).populate('buyer seller');
+
+            if (paired.status === TransactionStatus.inCompletion) {
+                // Secondo click su completa, chiude la transazione
+                trans.status = TransactionStatus.inCompletion;
+                await this._transactionService.completeTransaction(trans);
+            } else {
+                // Primo click su completa
+                this._agenda.schedule('in 1 day', 'closeCompletedTransaction', {
+                    id: (trans as any)._id
+                });
+
+                this._mail.send({
+                    template: 'complete-transaction',
+                    to: paired.seller ? paired.seller.mail : paired.buyer.mail,
+                    subject: 'Completa transazione',
+                    data: {
+                        book: trans.book.title,
+                        type: paired.seller ? 'sales' : 'purchases'
+                    }
+                });
+            }
+
             res.send({ status: 'ok' });
         } catch (err) {
             next(err);
         }
+    }
+
+    private _getTransactionPoints(sale): number {
+        let bookPoints = 0;
+
+        switch (sale.bookStatus) {
+            case BookStatus.new: bookPoints += 6; break;
+            case BookStatus.pencilNotes: bookPoints += 4; break;
+            case BookStatus.penNotes: bookPoints += 2; break;
+        }
+
+        return bookPoints + (sale.additionalMaterial ? 1 : 0);
     }
 }

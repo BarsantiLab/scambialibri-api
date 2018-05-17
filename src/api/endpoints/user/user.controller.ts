@@ -182,18 +182,3 @@ export class UserController {
         }
     }
 }
-
-// import { User, UserRole } from 'models/user.model';
-// import { hashPassword } from 'utils/crypt';
-
-// (async () => {
-//     const u = new User({
-//         activated: true,
-//         mail: 'davide.ross93@gmail.com',
-//         password: hashPassword('davide12'),
-//         role: UserRole.administrator
-//     });
-
-//     await u.save();
-//     console.log(u);
-// })();

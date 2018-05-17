@@ -9,7 +9,7 @@ import { Configuration } from 'core/config';
 
 @injectable()
 export class MailService {
-    _mailgunService: any;
+    private _mailgunService: any;
 
     constructor(
         private _config: Configuration
@@ -42,6 +42,7 @@ export class MailService {
 
         return new Promise((resolve, reject) => {
             this._mailgunService.messages().send(mailData, (err, body) => {
+                console.log('Mail sent!');
                 if (err) return reject(err);
                 resolve(body);
             });

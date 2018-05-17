@@ -35,8 +35,13 @@ export class AgendaService {
     }
 
     schedule(date: Date|string, jobName: string, data?: any): void {
-        this._agenda.schedule(date, jobName, data);
-        // TODO: add reporting on completed/failed
+        this._agenda.schedule(date, jobName, data, (err) => {
+            if (err) {
+                this._log.error(err.name + ': ' + err.message);
+            } else {
+                this._log.info(`Job '${jobName} completed!`);
+            }
+        });
     }
 
     define(jobName: string, callback: (job: any, done: (err?) => void) => void): void {

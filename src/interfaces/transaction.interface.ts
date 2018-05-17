@@ -4,7 +4,6 @@ import { IBook } from './book.interface';
 import { IMessage } from './message.interface';
 import { BookStatus, IUser } from './user.interface';
 
-// TODO: is closed used?
 export enum TransactionStatus {
     free = 'free',
     pending = 'pending',

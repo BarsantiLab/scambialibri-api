@@ -38,9 +38,13 @@ export class BookController {
                     book: (book as any)._id
                 });
 
+                // Skip books with updated transactions
+                if (trans && trans.status !== 'free') continue;
+
                 if (trans) {
                     outObj.transaction = {
                         id: (trans as any)._id.toString(),
+                        status: trans.status,
                         bookStatus: trans.bookStatus,
                         additionalMaterial: trans.additionalMaterial
                     };

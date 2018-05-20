@@ -6,13 +6,15 @@ import * as path from 'path';
 import * as fs from 'utils/promise-fs';
 
 import { Configuration } from 'core/config';
+import { Logger } from 'core/log';
 
 @injectable()
 export class MailService {
     private _mailgunService: any;
 
     constructor(
-        private _config: Configuration
+        private _config: Configuration,
+        private _log: Logger
     ) {
         this._mailgunService = Mailgun({
             apiKey: this._config.mail.apiKey,
@@ -42,7 +44,7 @@ export class MailService {
 
         return new Promise((resolve, reject) => {
             this._mailgunService.messages().send(mailData, (err, body) => {
-                console.log('Mail sent!');
+                this._log.info(`Mail sent: "${mailData.subject}" (${mailData.to})`);
                 if (err) return reject(err);
                 resolve(body);
             });

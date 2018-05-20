@@ -251,11 +251,24 @@ export class TransactionController {
             if (!buyerTrans) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: req.params.id });
             if (!req.user._id.equals(buyerTrans.buyer)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser, { transaction: req.params.id });
 
-            const sellerTrans = await Transaction.findById(req.body.transaction);
+            const sellerTrans = await Transaction.findById(req.body.transaction).populate('seller');
             if (!sellerTrans) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: req.body.transaction });
 
             await this._transactionService.pairTransactions(buyerTrans, sellerTrans);
-            res.send({ status: 'ok' });
+
+            res.send({
+                status: 'ok',
+                pairedUser: {
+                    firstName: sellerTrans.seller.firstName,
+                    lastName: sellerTrans.seller.lastName,
+                    mail: sellerTrans.seller.mail,
+                    address: sellerTrans.seller.address,
+                    province: sellerTrans.seller.province,
+                    city: sellerTrans.seller.city,
+                    phone: sellerTrans.seller.phone,
+                    schoolName: sellerTrans.seller.school.name
+                }
+            });
         } catch (err) {
             next(err);
         }
@@ -296,13 +309,38 @@ export class TransactionController {
 
             if (trans.status === TransactionStatus.free) {
                 await this._transactionService.deleteTransaction(trans);
-            } else if (trans.status === TransactionStatus.pending) {
+                res.send({ status: 'ok' });
+            } else if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding) {
                 await this._transactionService.cancelPendingTransaction(trans);
+
+                const sales: ITransaction[] = await Transaction.find({
+                    book: (trans.book as any)._id,
+                    _id: {
+                        $ne: (trans as any)._id
+                    },
+                    seller: {
+                        $ne: null
+                    }
+                }).populate('seller').exec();
+
+                // IMPROVE: extract to method
+                res.send({
+                    status: 'ok',
+                    sales: sales.map(sale => ({
+                        id: (sale as any)._id.toString(),
+                        status: sale.status,
+                        bookStatus: sale.bookStatus,
+                        additionalMaterial: sale.additionalMaterial || false,
+                        seller: {
+                            firstName: sale.seller.firstName,
+                            lastName: sale.seller.lastName
+                        },
+                        points: this._getTransactionPoints(sale)
+                    })).sort((a, b) => b.points - a.points)
+                });
             } else {
                 throw new ApiError(ErrorCode.BadTransactionStatus, { id: req.params.id });
             }
-
-            res.send({ status: 'ok' });
         } catch (err) {
             next(err);
         }
@@ -325,7 +363,7 @@ export class TransactionController {
                 throw new ApiError(ErrorCode.BadTransactionStatus, { id: (trans as any)._id });
             }
 
-            const paired: ITransaction = await Transaction.findById(trans.paired);
+            const paired: ITransaction = await Transaction.findById(trans.paired).populate('buyer seller');
 
             await Transaction.update({
                 _id: {

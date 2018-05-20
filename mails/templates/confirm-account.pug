@@ -8,6 +8,13 @@ html
         title Scambialibri.it
     
     body
-        h1 Benvenuto su Scambialibri.it!
-        h2 Clicca sul link qui sotto per entrare
-        a(href="{{baseDomain}}/onboarding?token={{token}}", target="_blank") Clicca!
+        h1 Scambialibri
+        hr
+        .center
+            h2 Benvenuto in Scambialibri.it!
+            p Clicca sul link sottostante per confermare il tuo account:
+            a.button(href="{{baseDomain}}/onboarding?token={{token}}", target="_blank") Clicca!
+            p Una volta confermato l'account potrai procedere ad acquistare e vendere i tuoi libri.
+        hr.footer
+        .footer
+            p Scambialibri ® 2017-2018

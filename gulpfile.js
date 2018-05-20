@@ -98,4 +98,5 @@ gulp.task('mail-inline', () => {
 });
 
 gulp.task('mail', (callback) => runSeq('mail-clean', ['mail-html', 'mail-css'], 'mail-inline', callback));
+gulp.task('build-prod', ['mail', 'build']);
 gulp.task('default', ['build']);

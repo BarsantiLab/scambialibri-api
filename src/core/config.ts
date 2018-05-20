@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 // import { checkExist } from 'utils/promise-fs';
 
 import { injectable } from 'inversify';
+import * as minimist from 'minimist';
 
 const defaultConf = {
     debug: {
@@ -102,6 +103,9 @@ export class Configuration {
     };
 
     constructor() {
+        const argv = minimist(process.argv.slice(2));
+        if (argv.port) defaultConf.http.port = argv.port;
+
         this.setConfiguration();
 
         // TODO: load configuration from env/cmd line arguments

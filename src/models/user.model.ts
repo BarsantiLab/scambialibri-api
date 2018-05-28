@@ -42,7 +42,8 @@ export class UserSchema extends mongoose.Schema implements IUser {
             // ===== BASIC INFO ===========================================================================
             accessToken: {
                 type: String,
-                unique: true
+                unique: true,
+                sparse: true
             },
 
             confirmationToken: {

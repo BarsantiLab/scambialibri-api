@@ -28,14 +28,19 @@ export class UserController {
     login(req: IRequestSessionHandler, res, next) {
         try {
             passport.authenticate('local-login', (err, user, info) => {
-                if (err) throw new ApiError(ErrorCode.InternalServerError, err);
-                if (!user) throw new ApiError(ErrorCode.Unauthorized);
+                try {
+                    console.log(err);
+                    if (err) throw new ApiError(ErrorCode.InternalServerError, err);
+                    if (!user) throw new ApiError(ErrorCode.Unauthorized);
 
-                res.send({
-                    id: user._id.toString(),
-                    accessToken: user.accessToken,
-                    onboardingCompleted: user.onboardingCompleted
-                });
+                    res.send({
+                        id: user._id.toString(),
+                        accessToken: user.accessToken,
+                        onboardingCompleted: user.onboardingCompleted
+                    });
+                } catch (err) {
+                    next(err);
+                }
             })(req, res, next);
         } catch (err) {
             next(err);
@@ -47,21 +52,26 @@ export class UserController {
     async signup(req, res, next) {
         try {
             passport.authenticate('local-signup', async (err, user: IUser, info) => {
-                if (err) {
-                    if (err.errorCodeObject.code === 1005) throw new ApiError(ErrorCode.DuplicateMail, err);
-                    throw new ApiError(ErrorCode.InternalServerError, err);
-                }
-
-                await this._mail.send({
-                    template: 'confirm-account',
-                    to: user.mail,
-                    subject: 'Scambialibri.it - conferma account',
-                    data: {
-                        token: user.confirmationToken
+                try {
+                    if (err) {
+                        // TODO: fix?
+                        if (err.errorCodeObject && err.errorCodeObject.code === 1005) throw new ApiError(ErrorCode.DuplicateMail, err);
+                        throw new ApiError(ErrorCode.InternalServerError, err);
                     }
-                });
 
-                res.send({ status: 'ok' });
+                    await this._mail.send({
+                        template: 'confirm-account',
+                        to: user.mail,
+                        subject: 'Scambialibri.it - conferma account',
+                        data: {
+                            token: user.confirmationToken
+                        }
+                    });
+
+                    res.send({ status: 'ok' });
+                } catch (err) {
+                    next(err);
+                }
             })(req, res, next);
         } catch (err) {
             next(err);

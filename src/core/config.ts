@@ -29,7 +29,8 @@ const defaultConf = {
         apiKey: 'key-fee6b455d644bedebf9f5a53a08feaf7',
         domain: 'sandbox470e6f41e2444c1daeeeffea13957418.mailgun.org',
         from: 'noreply@scambialibri.it',
-        baseDomain: 'http://localhost:8080'
+        // IMPROVE: changing by environment
+        baseDomain: 'https://sca-site.iamdavi.de'
     },
 
     mongo: {

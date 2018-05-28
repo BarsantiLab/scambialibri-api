@@ -1,18 +1,7 @@
-doctype html
-html
-    head
-        meta(charset="utf-8")
-        meta(http-equiv="X-UA-Compatible", content="IE=edge")
-        meta(name="viewport", content="width=device-width, initial-scale=1")
-        link(rel="stylesheet", href="style/mail.css")
-        title Scambialibri.it
-    
-    body
-        h1 Scambialibri
-        hr
-        .center
-            h2 Transazione annullata
-            p La tua transazione per {{type}} del libro "{{book}}" è stata completata.
-        hr.footer
-        .footer
-            p Scambialibri ® 2017-2018
+extends _partials/main
+
+block title
+    h2 Transazione completata
+
+block body
+    p La tua transazione per {{type}} del libro "{{book}}" è stata completata.

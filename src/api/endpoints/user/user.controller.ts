@@ -30,7 +30,7 @@ export class UserController {
             passport.authenticate('local-login', (err, user, info) => {
                 try {
                     console.log(err);
-                    if (err) throw new ApiError(ErrorCode.InternalServerError, err);
+                    if (err) throw err;
                     if (!user) throw new ApiError(ErrorCode.Unauthorized);
 
                     res.send({

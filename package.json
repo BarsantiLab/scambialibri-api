@@ -7,8 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon release/js/bin/server.js",
     "docs": "gulp docs; node release/js/bin/docs.js",
-    "build": "gulp build",
-    "build-prod": "gulp build-prod"
+    "build": "./build.sh",
+    "build-prod": "gulp build-prod",
+    "dump-version": "./dump-version.sh"
   },
   "author": "Davide Rossetto <davide.ross93@gmail.com>",
   "license": "ISC",

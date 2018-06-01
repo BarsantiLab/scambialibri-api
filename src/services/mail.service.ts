@@ -23,6 +23,11 @@ export class MailService {
     }
 
     async send(conf: IMailConfiguration) {
+        if (this._config.debug.preventMailSending) {
+            this._log.debug(`Mail skipped by configuration: "${conf.subject}" (${conf.to})`);
+            return;
+        }
+
         let template: string = await fs.readFile(path.resolve(`release/js/mails/${conf.template}.html`));
 
         if (conf.data) {

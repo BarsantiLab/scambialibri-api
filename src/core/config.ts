@@ -7,7 +7,8 @@ import * as minimist from 'minimist';
 const defaultConf = {
     debug: {
         sendErrorsToClient: true,
-        sendStackToClient: true
+        sendStackToClient: true,
+        preventMailSending: true
     },
 
     google: {
@@ -101,6 +102,7 @@ export class Configuration {
     debug: {
         sendStackToClient: boolean;
         sendErrorsToClient: boolean;
+        preventMailSending: boolean;
     };
 
     constructor() {

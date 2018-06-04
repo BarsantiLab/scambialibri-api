@@ -7,10 +7,8 @@ export class TransactionValidator {
         validate({
             object: req.body,
             schema: Joi.object().keys({
-                book: Joi.string().objectId().required(),
-                mode: Joi.string().bookMode().required(),
-                bookStatus: Joi.string().bookStatus(),
-                additionalMaterial: Joi.boolean()
+                buyer: Joi.string().objectId().required(),
+                seller: Joi.string().objectId().required()
             })
         }, next);
     }

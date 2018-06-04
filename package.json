@@ -9,7 +9,7 @@
     "docs": "gulp docs; node release/js/bin/docs.js",
     "build": "./build.sh",
     "build-prod": "gulp build-prod",
-    "dump-version": "./dump-version.sh"
+    "dump-version": "DATE=$(date +\"%Y-%m-%d_%H_%M\");mongodump --db Scambialibri --archive=dumps/Scambialibri_$DATE.tar.gz --gzip"
   },
   "author": "Davide Rossetto <davide.ross93@gmail.com>",
   "license": "ISC",

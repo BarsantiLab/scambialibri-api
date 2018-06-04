@@ -14,16 +14,19 @@ import { ResponseService } from 'services/response.service';
 import { TransactionService } from 'services/transaction.service';
 
 import { BookRoute } from 'api/endpoints/book/book.route';
+import { OfferRoute } from 'api/endpoints/offer/offer.route';
 import { SchoolRoute } from 'api/endpoints/school/school.route';
 import { TransactionRoute } from 'api/endpoints/transaction/transaction.route';
 import { UserRoute } from 'api/endpoints/user/user.route';
 
 import { BookController } from 'api/endpoints/book/book.controller';
+import { OfferController } from 'api/endpoints/offer/offer.controller';
 import { SchoolController } from 'api/endpoints/school/school.controller';
 import { TransactionController } from 'api/endpoints/transaction/transaction.controller';
 import { UserController } from 'api/endpoints/user/user.controller';
 
 import { BookValidator } from 'api/endpoints/book/book.validator';
+import { OfferValidator } from 'api/endpoints/offer/offer.validator';
 import { SchoolValidator } from 'api/endpoints/school/school.validator';
 import { TransactionValidator } from 'api/endpoints/transaction/transaction.validator';
 import { UserValidator } from 'api/endpoints/user/user.validator';
@@ -49,16 +52,19 @@ InversifyContainer.bind<ResponseService>(ResponseService).toSelf();
 InversifyContainer.bind<TransactionService>(TransactionService).toSelf();
 
 InversifyContainer.bind<BookRoute>(BookRoute).toSelf();
+InversifyContainer.bind<OfferRoute>(OfferRoute).toSelf();
 InversifyContainer.bind<SchoolRoute>(SchoolRoute).toSelf();
 InversifyContainer.bind<TransactionRoute>(TransactionRoute).toSelf();
 InversifyContainer.bind<UserRoute>(UserRoute).toSelf();
 
 InversifyContainer.bind<BookController>(BookController).toSelf();
+InversifyContainer.bind<OfferController>(OfferController).toSelf();
 InversifyContainer.bind<SchoolController>(SchoolController).toSelf();
 InversifyContainer.bind<TransactionController>(TransactionController).toSelf();
 InversifyContainer.bind<UserController>(UserController).toSelf();
 
 InversifyContainer.bind<BookValidator>(BookValidator).toSelf();
+InversifyContainer.bind<OfferValidator>(OfferValidator).toSelf();
 InversifyContainer.bind<SchoolValidator>(SchoolValidator).toSelf();
 InversifyContainer.bind<TransactionValidator>(TransactionValidator).toSelf();
 InversifyContainer.bind<UserValidator>(UserValidator).toSelf();

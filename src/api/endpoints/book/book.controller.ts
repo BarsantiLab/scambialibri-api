@@ -39,7 +39,8 @@ export class BookController {
                 });
 
                 // Skip books with updated transactions
-                if (trans && trans.status !== 'free') continue;
+                // TODO: fix/remove
+                // if (trans && trans.status !== TransactionStatus.) continue;
 
                 if (trans) {
                     outObj.transaction = {

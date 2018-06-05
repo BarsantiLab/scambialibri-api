@@ -15,6 +15,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/agenda": "^1.0.3",
+    "@types/dotenv": "^4.0.3",
     "@types/lodash": "^4.14.109",
     "@types/minimist": "^1.2.0",
     "@types/moment": "^2.13.0",
@@ -54,6 +55,7 @@
     "body-parser": "^1.18.2",
     "compression": "^1.7.1",
     "cors": "^2.8.4",
+    "dotenv": "^6.0.0",
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
     "helmet": "^3.9.0",

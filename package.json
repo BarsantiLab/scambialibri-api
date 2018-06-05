@@ -9,12 +9,13 @@
     "docs": "gulp docs; node release/js/bin/docs.js",
     "build": "./build.sh",
     "build-prod": "gulp build-prod",
-    "dump-version": "./dump-version.sh"
+    "dump-version": "DATE=$(date +\"%Y-%m-%d_%H_%M\");mongodump --db Scambialibri --archive=dumps/Scambialibri_$DATE.tar.gz --gzip"
   },
   "author": "Davide Rossetto <davide.ross93@gmail.com>",
   "license": "ISC",
   "devDependencies": {
     "@types/agenda": "^1.0.3",
+    "@types/lodash": "^4.14.109",
     "@types/minimist": "^1.2.0",
     "@types/moment": "^2.13.0",
     "@types/mongoose": "^4.7.28",
@@ -24,6 +25,7 @@
     "@types/sanitize-html": "^1.14.0",
     "async": "^2.6.0",
     "autoprefixer": "^8.1.0",
+    "fast-csv": "^2.4.1",
     "gulp": "^3.9.1",
     "gulp-apidoc": "^0.2.6",
     "gulp-clean": "^0.3.2",
@@ -57,6 +59,7 @@
     "helmet": "^3.9.0",
     "inversify": "^4.5.2",
     "joi": "^13.0.2",
+    "lodash": "^4.17.10",
     "mailgun-js": "^0.16.0",
     "minimist": "^1.2.0",
     "moment": "^2.22.1",

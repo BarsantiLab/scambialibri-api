@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { injectable } from 'inversify';
 import * as minimist from 'minimist';
 
+// WARN: check for env file existance
 dotenv.config();
 
 // IMPROVE: integrate https://github.com/mozilla/node-convict

@@ -4,11 +4,7 @@ import * as _ from 'lodash';
 import { injectable } from 'inversify';
 import * as minimist from 'minimist';
 
-if (process.env.NODE_ENV !== 'production') {
-    // TODO: fix log layout
-    console.log('Environment loaded from file');
-    dotenv.config();
-}
+dotenv.config();
 
 // IMPROVE: integrate https://github.com/mozilla/node-convict
 

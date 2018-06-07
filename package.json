@@ -9,7 +9,8 @@
     "docs": "gulp docs; node release/js/bin/docs.js",
     "build": "./build.sh",
     "build-prod": "gulp build-prod",
-    "dump-version": "DATE=$(date +\"%Y-%m-%d_%H_%M\");mongodump --db Scambialibri --archive=dumps/Scambialibri_$DATE.tar.gz --gzip"
+    "dump-version": "DATE=$(date +\"%Y-%m-%d_%H_%M\");mongodump --db Scambialibri --archive=dumps/Scambialibri_$DATE.tar.gz --gzip",
+    "mirror-dev-db": "mongo tasks/mirror-dev-db.js"
   },
   "author": "Davide Rossetto <davide.ross93@gmail.com>",
   "license": "ISC",

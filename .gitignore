@@ -9,3 +9,4 @@ import-data/
 *.log
 *.tar.gz
 .env*
+ecosystem.json

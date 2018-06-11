@@ -5,7 +5,7 @@ const csv = require('fast-csv');
 const _ = require('lodash');
 
 const URL = 'mongodb://localhost:27017';
-const DB_NAME = 'Scambialibri';
+const DB_NAME = 'ScambialibriDev';
 const FILE = 'tito-caro';
 const SCHOOL_NAME = 'Liceo "Tito Lucrezio Caro"';
 
@@ -93,22 +93,58 @@ MongoClient.connect(URL, (err, client) => {
             },
 
             books: cb => {
-                books = _.uniq(books, 'isbn');
-                db.collection('books').insertMany(books.map(e => _.pick(e, [
+                const group = _.groupBy(books, 'isbn');
+                const out = _.uniqBy(books, 'isbn').map(e => {
+                    e.grades = group[e.isbn].map(k => _.pick(k, ['year', 'section', 'specialization']));
+        
+                    delete e.year;
+                    delete e.section;
+                    delete e.specialization;
+        
+                    if (e.grades.length === 0) {
+                        console.log('WARN!');
+                    }
+        
+                    return e;
+                });
+                
+                db.collection('books').insertMany(out.map(e => _.pick(e, [
                     'isbn', 'author', 'title', 'subtitle', 'price'
                 ])), (err, res) => {
                     if (err) return cb(err);
                     
-                    async.eachSeries(books, (e, bookCb) => {
-                        db.collection('grades').updateOne({
-                            specialization: specDocs.find(k => k.name === e.specialization)._id,
-                            year: e.year,
-                            section: e.section
-                        }, {
-                            $push: {
-                                books: res.ops.find(k => k.isbn === e.isbn)._id
-                            }
-                        }, bookCb);
+                    async.eachSeries(out, (e, bookCb) => {
+                        const gradeIds = [];
+
+                        async.eachSeries(e.grades, (grade, gradeCb) => {
+                            db.collection('grades').findOne({
+                                specialization: specDocs.find(k => k.name === grade.specialization)._id,
+                                year: grade.year,
+                                section: grade.section
+                            }, (err, data) => {
+                                if (err) return gradeCb(err);
+
+                                gradeIds.push(data._id);
+                                
+                                db.collection('grades').findOneAndUpdate({
+                                    _id: data._id
+                                }, {
+                                    $push: {
+                                        books: res.ops.find(k => k.isbn === e.isbn)._id
+                                    }
+                                }, gradeCb);
+                            });
+                        }, (err) => {
+                            if (err) return bookCb(err);
+
+                            db.collection('books').findOneAndUpdate({
+                                _id: res.ops.find(k => k.isbn === e.isbn)._id
+                            }, {
+                                $set: {
+                                    grades: gradeIds
+                                }
+                            }, bookCb);
+                        });
                     }, cb);
                 });
             }

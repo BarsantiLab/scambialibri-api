@@ -47,7 +47,7 @@ export class UserController {
         }
     }
 
-    logout(req, res) { }
+    logout() { }
 
     async signup(req, res, next) {
         try {

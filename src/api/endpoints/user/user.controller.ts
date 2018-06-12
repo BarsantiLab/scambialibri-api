@@ -18,6 +18,8 @@ import { User } from 'models/user.model';
 import { GeoService } from 'services/geo.service';
 import { MailService } from 'services/mail.service';
 
+import { hashPassword, uuid } from 'utils/crypt';
+
 @injectable()
 export class UserController {
     constructor(
@@ -62,7 +64,7 @@ export class UserController {
                     await this._mail.send({
                         template: 'confirm-account',
                         to: user.mail,
-                        subject: 'Scambialibri.it - conferma account',
+                        subject: 'LoScambialibri.it - conferma account',
                         data: {
                             token: user.confirmationToken
                         }
@@ -137,7 +139,6 @@ export class UserController {
             const loc = geoData.results[0].geometry.location;
             user.coords = [loc.lng, loc.lat];
 
-            console.log((user as any)._id);
             await User.findByIdAndUpdate((user as any)._id, user);
             res.send({ status: 'ok' });
         } catch (err) {
@@ -187,6 +188,52 @@ export class UserController {
                 year: grade.year,
                 section: grade.section
             });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async recoverPassword(req, res, next) {
+        try {
+            const user = await User.findOne({ mail: req.body.mail });
+            if (!user) throw new ApiError(ErrorCode.UserNotFound, { mail: req.body.mail });
+
+            const token = uuid(32);
+
+            await User.findOneAndUpdate({
+                mail: req.body.mail
+            }, {
+                passwordResetToken: token
+            });
+
+            await this._mail.send({
+                template: 'forgot-password',
+                to: user.mail,
+                subject: 'LoScambialibri.it - password dimenticata',
+                data: { token }
+            });
+
+            res.send({ status: 'ok' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async setNewPassword(req, res, next) {
+        try {
+            const user = await User.findOne({ passwordResetToken: req.body.token });
+            if (!user) throw new ApiError(ErrorCode.UserNotFound);
+
+            const newHash = hashPassword(req.body.password);
+
+            await User.findOneAndUpdate({
+                _id: (user as any)._id
+            }, {
+                password: newHash,
+                passwordResetToken: null
+            });
+
+            res.send({ status: 'ok' });
         } catch (err) {
             next(err);
         }

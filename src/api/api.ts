@@ -70,7 +70,7 @@ export class Api {
         // Setup logging middleware
         this._logger.setupApp(this._app);
 
-        this._app.use(express.static(path.resolve('assets')));
+        this._app.use('/assets', express.static(path.resolve('assets')));
 
         // Setup controllers routes
         this._app.use(this._route.router);

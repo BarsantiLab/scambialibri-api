@@ -43,7 +43,7 @@ export class MailService {
         const mailData: any = {
             from: this._config.mail.from,
             to: conf.to,
-            subject: conf.subject,
+            subject: `LoScambialibri.it - ${conf.subject}`,
             html: template
         };
 

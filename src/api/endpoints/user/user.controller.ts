@@ -64,7 +64,7 @@ export class UserController {
                     await this._mail.send({
                         template: 'confirm-account',
                         to: user.mail,
-                        subject: 'LoScambialibri.it - conferma account',
+                        subject: 'Conferma account',
                         data: {
                             token: user.confirmationToken
                         }
@@ -209,7 +209,7 @@ export class UserController {
             await this._mail.send({
                 template: 'forgot-password',
                 to: user.mail,
-                subject: 'LoScambialibri.it - password dimenticata',
+                subject: 'Password dimenticata',
                 data: { token }
             });
 

@@ -16,6 +16,12 @@ h1 {
     color: $blue;
     font-weight: 200;
     margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    
+    img {
+        margin-right: 10px;
+    }
 }
 
 hr {

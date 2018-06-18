@@ -15,6 +15,7 @@ export interface IUser {
     disabled: boolean;
     role: UserRole;
     onboardingCompleted: boolean;
+    passwordResetToken?: string;
 
     firstName: string;
     lastName: string;

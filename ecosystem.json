@@ -4,8 +4,8 @@
         "script": "release/js/bin/server.js",
         "exec_interpreter": "node@8.11.1",
         "env": {
-            "NODE_ENV": "production"
+            "NODE_ENV": "development"
         },
-        "args": "--port 20000"
+        "args": "--port 23000"
     }]
 }

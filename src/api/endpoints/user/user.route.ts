@@ -99,5 +99,15 @@ export class UserRoute {
             this._validator.getUserGrade,
             this._ctrl.getUserGrade.bind(this._ctrl)
         );
+
+        router.post('/user/forgot-password',
+            this._validator.recoverPassword,
+            this._ctrl.recoverPassword.bind(this._ctrl)
+        );
+
+        router.post('/user/set-password',
+            this._validator.setNewPassword,
+            this._ctrl.setNewPassword.bind(this)
+        );
     }
 }

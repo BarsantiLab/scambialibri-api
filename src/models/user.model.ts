@@ -19,6 +19,7 @@ export class UserSchema extends mongoose.Schema implements IUser {
     disabled: boolean;
     role: UserRole;
     onboardingCompleted: boolean;
+    passwordResetToken?: string;
 
     firstName: string;
     lastName: string;
@@ -73,6 +74,8 @@ export class UserSchema extends mongoose.Schema implements IUser {
                 type: Boolean,
                 default: false
             },
+
+            passwordResetToken: String,
 
             // ===== PERSONAL DATA ========================================================================
 

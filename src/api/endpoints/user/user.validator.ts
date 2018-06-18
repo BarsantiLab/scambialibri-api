@@ -77,4 +77,23 @@ export class UserValidator {
             })
         }, next);
     }
+
+    recoverPassword(req, res, next) {
+        validate({
+            object: req.body,
+            schema: Joi.object().keys({
+                mail: Joi.string().email().required()
+            })
+        }, next);
+    }
+
+    setNewPassword(req, res, next) {
+        validate({
+            object: req.body,
+            schema: Joi.object().keys({
+                password: Joi.string().required(),
+                token: Joi.string().required()
+            })
+        }, next);
+    }
 }

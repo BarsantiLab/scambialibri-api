@@ -25,5 +25,10 @@ export class OfferRoute {
             this._policy.is(Role.authenticated),
             this._ctrl.getSales.bind(this._ctrl)
         );
+
+        router.get('/offer/purchases',
+            this._policy.is(Role.authenticated),
+            this._ctrl.getPurchases.bind(this._ctrl)
+        );
     }
 }

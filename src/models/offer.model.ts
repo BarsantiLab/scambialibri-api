@@ -1,15 +1,16 @@
 import * as mongoose from 'mongoose';
 
-import { IBook } from 'interfaces/book.interface';
+import { IBookModel } from 'interfaces/book.interface';
 import { IOffer, IOfferModel, OfferType } from 'interfaces/offer.interface';
 import { BookStatus, IUser  } from 'interfaces/user.interface';
 
 export class OfferSchema extends mongoose.Schema implements IOffer {
     type: OfferType;
     user: IUser;
-    book: IBook;
+    book: IBookModel;
     bookStatus: BookStatus;
     additionalMaterial: boolean;
+    isPending: boolean;
 
     createdAt: Date;
 
@@ -27,6 +28,10 @@ export class OfferSchema extends mongoose.Schema implements IOffer {
             },
             bookStatus: String,
             additionalMaterial: Boolean,
+            isPending: {
+                type: Boolean,
+                default: false
+            },
             createdAt: Date
         });
     }

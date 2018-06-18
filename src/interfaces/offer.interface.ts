@@ -1,5 +1,5 @@
 import { Document } from 'mongoose';
-import { IBook } from './book.interface';
+import { IBookModel } from './book.interface';
 import { BookStatus, IUser } from './user.interface';
 
 export enum OfferType {
@@ -9,9 +9,11 @@ export enum OfferType {
 export interface IOffer {
     type: OfferType;
     user: IUser;
-    book: IBook;
+    book: IBookModel;
     bookStatus: BookStatus;
     additionalMaterial: boolean;
+
+    isPending: boolean;
 
     createdAt: Date;
 }

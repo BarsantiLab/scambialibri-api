@@ -4,15 +4,15 @@ import { IBook } from 'interfaces/book.interface';
 import { IMessage } from 'interfaces/message.interface';
 import { IOffer } from 'interfaces/offer.interface';
 import { ITransaction, ITransactionModel, TransactionStatus } from 'interfaces/transaction.interface';
-import { BookStatus, IUser } from 'interfaces/user.interface';
+import { BookStatus, IUserModel } from 'interfaces/user.interface';
 
 export class TransactionSchema extends mongoose.Schema implements ITransaction {
     status: TransactionStatus;
 
     buyerOffer: IOffer;
-    buyerUser: IUser;
+    buyerUser: IUserModel;
     sellerOffer: IOffer;
-    sellerUser: IUser;
+    sellerUser: IUserModel;
 
     book: IBook;
     bookStatus: BookStatus;

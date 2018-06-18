@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 import { IBook } from './book.interface';
 import { IMessage } from './message.interface';
 import { IOffer } from './offer.interface';
-import { BookStatus, IUser } from './user.interface';
+import { BookStatus, IUserModel } from './user.interface';
 
 export enum TransactionStatus {
     pending = 'pending',
@@ -17,9 +17,9 @@ export interface ITransaction {
     status: TransactionStatus;
 
     buyerOffer: IOffer;
-    buyerUser: IUser;
+    buyerUser: IUserModel;
     sellerOffer: IOffer;
-    sellerUser: IUser;
+    sellerUser: IUserModel;
 
     book: IBook;
     bookStatus: BookStatus;

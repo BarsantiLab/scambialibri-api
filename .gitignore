@@ -4,6 +4,9 @@ release/
 docs/
 files/
 dumps/
+import-data/
 
 *.log
 *.tar.gz
+.env*
+ecosystem.json

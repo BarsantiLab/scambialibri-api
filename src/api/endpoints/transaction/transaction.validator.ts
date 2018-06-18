@@ -40,20 +40,6 @@ export class TransactionValidator {
         }, next);
     }
 
-    pairTransaction(req, res, next) {
-        validate([{
-            object: req.params,
-            schema: Joi.object().keys({
-                id: Joi.string().objectId().required()
-            })
-        }, {
-            object: req.body,
-            schema: Joi.object().keys({
-                transaction: Joi.string().objectId().required()
-            })
-        }], next);
-    }
-
     sendMessage(req, res, next) {
         validate([{
             object: req.params,

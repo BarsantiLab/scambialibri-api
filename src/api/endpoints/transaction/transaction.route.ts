@@ -27,22 +27,6 @@ export class TransactionRoute {
             this._ctrl.cancelTransaction.bind(this._ctrl)
         );
 
-        router.get('/transaction/purchases',
-            this._policy.is(Role.authenticated),
-            this._ctrl.getPurchases.bind(this._ctrl)
-        );
-
-        router.get('/transaction/sales',
-            this._policy.is(Role.authenticated),
-            this._ctrl.getSales.bind(this._ctrl)
-        );
-
-        router.post('/transaction/:id/pair',
-            this._policy.is(Role.authenticated),
-            this._validator.pairTransaction,
-            this._ctrl.pairTransaction.bind(this._ctrl)
-        );
-
         router.post('/transaction/:id/message',
             this._policy.is(Role.authenticated),
             this._validator.sendMessage,

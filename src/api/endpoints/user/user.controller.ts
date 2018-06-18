@@ -29,7 +29,6 @@ export class UserController {
         try {
             passport.authenticate('local-login', (err, user, info) => {
                 try {
-                    console.log(err);
                     if (err) throw err;
                     if (!user) throw new ApiError(ErrorCode.Unauthorized);
 
@@ -137,7 +136,6 @@ export class UserController {
             const loc = geoData.results[0].geometry.location;
             user.coords = [loc.lng, loc.lat];
 
-            console.log((user as any)._id);
             await User.findByIdAndUpdate((user as any)._id, user);
             res.send({ status: 'ok' });
         } catch (err) {

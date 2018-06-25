@@ -3,7 +3,7 @@ import { IBookModel } from './book.interface';
 import { BookStatus, IUser } from './user.interface';
 
 export enum OfferType {
-    buy, sell
+    buy = 'buy', sell = 'sell'
 }
 
 export interface IOffer {

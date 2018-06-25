@@ -15,4 +15,13 @@ export class OfferValidator {
             })
         }, next);
     }
+
+    cancelOffer(req, res, next) {
+        validate({
+            object: req.params,
+            schema: Joi.object().keys({
+                id: Joi.string().objectId().required()
+            })
+        }, next);
+    }
 }

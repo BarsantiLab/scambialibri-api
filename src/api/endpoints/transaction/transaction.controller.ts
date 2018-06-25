@@ -3,6 +3,7 @@ import * as sanitize from 'sanitize-html';
 
 import { ApiError, ErrorCode } from 'core/error-codes';
 
+import { IBookModel } from 'interfaces/book.interface';
 import { IMessageModel } from 'interfaces/message.interface';
 import { IOfferModel } from 'interfaces/offer.interface';
 import { ITransactionModel, TransactionStatus} from 'interfaces/transaction.interface';
@@ -15,6 +16,7 @@ import { User } from 'models/user.model';
 
 import { AgendaService } from 'services/agenda.service';
 import { MailService } from 'services/mail.service';
+import { OfferController } from '../offer/offer.controller';
 
 // TODO: rework on "not responding" feature: enabled if the transaction last message pushed is older than 24h
 // TODO: add last message pushed date on transaction
@@ -22,6 +24,7 @@ import { MailService } from 'services/mail.service';
 @injectable()
 export class TransactionController {
     constructor(
+        private _offerCtrl: OfferController,
         private _agenda: AgendaService,
         private _mail: MailService
     ) {
@@ -51,8 +54,7 @@ export class TransactionController {
             const seller: IOfferModel = await Offer.findById(req.body.seller);
             if (!seller) throw new ApiError(ErrorCode.OfferNotFound, { id: req.body.seller });
 
-            // TODO: test this
-            const oldTransaction = await Transaction.find({
+            const oldTransaction = await Transaction.findOne({
                 $or: [{
                     buyerOffer: buyer._id
                 }, {
@@ -62,8 +64,8 @@ export class TransactionController {
 
             if (oldTransaction) throw new ApiError(ErrorCode.OfferIsAlreadyPaired);
 
-            await new Transaction({
-                status: TransactionStatus,
+            const newTrans: ITransactionModel = await new Transaction({
+                status: TransactionStatus.pending,
 
                 buyerOffer: buyer._id,
                 buyerUser: buyer.user,
@@ -99,6 +101,9 @@ export class TransactionController {
                     city: sellerUser.city,
                     phone: sellerUser.phone,
                     schoolName: sellerUser.school.name
+                },
+                transaction: {
+                    id: newTrans._id
                 }
             });
         } catch (err) {
@@ -108,13 +113,9 @@ export class TransactionController {
 
     async sendMessage(req, res, next) {
         try {
-            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('book');
-
-            if (!req.user._id.equals(trans.buyerUser) && !req.user._id.equals(trans.sellerUser)) {
-                throw new ApiError(ErrorCode.TransactionNotRelatedToUser, {
-                    transaction: req.params.id
-                });
-            }
+            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
+            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
 
             // Create new message
             const content = sanitize(req.body.message);
@@ -159,19 +160,18 @@ export class TransactionController {
         }
     }
 
-    // TODO: set offer.isPending false
     async cancelTransaction(req, res, next) {
         try {
             // TODO: move to middleware?
             const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
-            if (!req.user._id.equals(trans.sellerUser) && !req.user._id.equals(trans.buyerUser)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
             if (trans.status !== TransactionStatus.pending) throw new ApiError(ErrorCode.BadTransactionStatus);
 
             await this._cancelTransaction(trans);
 
-            // TODO: add offer list?
             res.send({
+                sales: await this._offerCtrl.getSalesForBook(trans.book as IBookModel),
                 status: 'ok'
             });
         } catch (err) {
@@ -250,6 +250,16 @@ export class TransactionController {
             _id: {
                 $in: transaction.messages
             }
+        });
+
+        await Offer.update({
+            _id: {
+                $in: [transaction.buyerOffer, transaction.sellerOffer]
+            }
+        }, {
+            isPending: false
+        }, {
+            multi: true
         });
 
         await transaction.remove();

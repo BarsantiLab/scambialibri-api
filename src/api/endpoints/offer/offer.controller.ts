@@ -4,7 +4,7 @@ import * as mongoose from 'mongoose';
 
 import { ApiError, ErrorCode } from 'core/error-codes';
 
-import { IBook } from 'interfaces/book.interface';
+import { IBook, IBookModel } from 'interfaces/book.interface';
 import { IMessageModel } from 'interfaces/message.interface';
 import { IOfferModel, OfferType } from 'interfaces/offer.interface';
 import { ITransactionModel } from 'interfaces/transaction.interface';
@@ -124,10 +124,18 @@ export class OfferController {
             for (const offer of purchases) {
                 const outOffer: any = {
                     id: offer._id,
-                    type: offer.type
+                    type: offer.type,
+                    book: {
+                        author: offer.book.author,
+                        title: offer.book.title,
+                        isbn: offer.book.isbn
+                    }
                 };
 
                 if (offer.isPending) {
+                    // TODO: move to enum
+                    outOffer.status = 'pending';
+
                     const transaction: ITransactionModel = await Transaction.findOne({
                         buyerOffer: offer._id
                     }).populate([{
@@ -161,24 +169,14 @@ export class OfferController {
                         content: msg.content,
                         date: msg.date
                     }));
-                } else {
-                    const sales: IOfferModel[] = await Offer.find({
-                        book: offer.book._id,
-                        type: OfferType.sell,
-                        isPending: false
-                    }).populate('user');
 
-                    // TODO: add status
-                    outOffer.sales = sales.map(sale => ({
-                        id: sale._id,
-                        bookStatus: sale.bookStatus,
-                        additionalMaterial: sale.additionalMaterial,
-                        seller: {
-                            firstName: sale.user.firstName,
-                            lastName: sale.user.lastName
-                        },
-                        points: this._getOfferPoints(sale)
-                    })).sort((a, b) => b.points - a.points);
+                    outOffer.transaction = {
+                        id: transaction._id
+                    };
+                } else {
+                    // TODO: move to enum
+                    outOffer.status = 'free';
+                    outOffer.sales = await this.getSalesForBook(offer.book);
                 }
 
                 out.push(outOffer);
@@ -190,7 +188,38 @@ export class OfferController {
         }
     }
 
-    // TODO: add cancel offer
+    async cancelOffer(req, res, next) {
+        try {
+            const offer: IOfferModel = await Offer.findById(req.params.id);
+            if (!offer) throw new ApiError(ErrorCode.OfferNotFound);
+            if (!req.user._id.equals(offer.user)) throw new ApiError(ErrorCode.OfferNotRelatedToUser);
+
+            await offer.remove();
+            res.send({ status: 'ok' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getSalesForBook(book: IBookModel): Promise<any[]> {
+        const sales: IOfferModel[] = await Offer.find({
+            book: book._id,
+            type: OfferType.sell
+        }).populate('user');
+
+        // TODO: add status
+        return sales.map(sale => ({
+            id: sale._id,
+            bookStatus: sale.bookStatus,
+            status: sale.isPending ? 'pending' : 'free',
+            additionalMaterial: sale.additionalMaterial,
+            user: {
+                firstName: sale.user.firstName,
+                lastName: sale.user.lastName
+            },
+            points: this._getOfferPoints(sale)
+        })).sort((a, b) => b.points - a.points);
+    }
 
     private _getOfferPoints(offer: IOfferModel): number {
         let points = 0;

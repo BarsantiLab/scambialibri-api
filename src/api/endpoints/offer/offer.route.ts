@@ -30,5 +30,11 @@ export class OfferRoute {
             this._policy.is(Role.authenticated),
             this._ctrl.getPurchases.bind(this._ctrl)
         );
+
+        router.delete('/offer/:id',
+            this._policy.is(Role.authenticated),
+            this._validator.cancelOffer,
+            this._ctrl.cancelOffer.bind(this)
+        );
     }
 }

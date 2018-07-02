@@ -21,6 +21,8 @@ export interface ITransaction {
     sellerOffer: IOffer;
     sellerUser: IUserModel;
 
+    firstCompleteUser: IUserModel;
+
     book: IBook;
     bookStatus: BookStatus;
     additionalMaterial: boolean;

@@ -64,7 +64,12 @@ export class OfferController {
             for (const offer of sales) {
                 const outOffer: any = {
                     id: offer._id,
-                    type: offer.type
+                    type: offer.type,
+                    book: {
+                        author: offer.book.author,
+                        title: offer.book.title,
+                        isbn: offer.book.isbn
+                    }
                 };
 
                 const transaction: ITransactionModel = await Transaction.findOne({
@@ -80,6 +85,8 @@ export class OfferController {
                 }]);
 
                 if (transaction) {
+                    outOffer.status = transaction.status;
+
                     // TODO: on last update?
                     if (moment().diff(moment(transaction.createdAt), 'd', true) > 1) {
                         outOffer.notRespondingEnabled = true;
@@ -101,6 +108,14 @@ export class OfferController {
                         content: msg.content,
                         date: msg.date
                     }));
+
+                    outOffer.transaction = {
+                        id: transaction._id,
+                        isFirstComplete: transaction.firstCompleteUser && req.user._id.equals(transaction.firstCompleteUser)
+                    };
+                } else {
+                    // TODO: move to enum
+                    outOffer.status = 'free';
                 }
 
                 out.push(outOffer);
@@ -133,9 +148,6 @@ export class OfferController {
                 };
 
                 if (offer.isPending) {
-                    // TODO: move to enum
-                    outOffer.status = 'pending';
-
                     const transaction: ITransactionModel = await Transaction.findOne({
                         buyerOffer: offer._id
                     }).populate([{
@@ -147,6 +159,8 @@ export class OfferController {
                             model: 'School'
                         }
                     }]);
+
+                    outOffer.status = transaction.status;
 
                     // TODO: on last update?
                     if (moment().diff(moment(transaction.createdAt), 'd', true) > 1) {
@@ -165,7 +179,7 @@ export class OfferController {
                     };
 
                     outOffer.messages = transaction.messages.map((msg: IMessageModel) => ({
-                        send: (msg.from as any).equals(req.user._id),
+                        sent: req.user._id.equals(msg.from as any),
                         content: msg.content,
                         date: msg.date
                     }));

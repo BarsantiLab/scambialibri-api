@@ -3,12 +3,13 @@ import * as sanitize from 'sanitize-html';
 
 import { ApiError, ErrorCode } from 'core/error-codes';
 
-import { IBookModel } from 'interfaces/book.interface';
+import { IBook, IBookModel } from 'interfaces/book.interface';
 import { IMessageModel } from 'interfaces/message.interface';
 import { IOfferModel } from 'interfaces/offer.interface';
 import { ITransactionModel, TransactionStatus} from 'interfaces/transaction.interface';
 import { IUser, IUserModel } from 'interfaces/user.interface';
 
+import { Book } from 'models/book.model';
 import { Message } from 'models/message.model';
 import { Offer } from 'models/offer.model';
 import { Transaction } from 'models/transaction.model';
@@ -89,6 +90,17 @@ export class TransactionController {
             });
 
             const sellerUser: IUser = await User.findById(seller.user).populate('school');
+            const sellerBook: IBook = await Book.findById(seller.book);
+
+            // Send mail
+            this._mail.send({
+                template: 'new-transaction',
+                to: sellerUser.mail,
+                subject: 'Nuova transazione',
+                data: {
+                    book: sellerBook.title
+                }
+            });
 
             res.send({
                 status: 'ok',
@@ -113,6 +125,7 @@ export class TransactionController {
 
     async sendMessage(req, res, next) {
         try {
+            // TODO: move to middleware?
             const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
             if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
@@ -184,7 +197,7 @@ export class TransactionController {
             // TODO: move to middleware?
             const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('sellerUser buyerUser book');
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
-            if (!req.user._id.equals(trans.sellerUser) && !req.user._id.equals(trans.buyerUser)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
             if (trans.status !== TransactionStatus.pending) throw new ApiError(ErrorCode.BadTransactionStatus);
 
             trans.status = TransactionStatus.notResponding;
@@ -212,9 +225,11 @@ export class TransactionController {
     async reportCompleted(req, res, next) {
         try {
             // TODO: move to middleware?
-            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('sellerUser buyerUser book');
+            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
             if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
-            if (!req.user._id.equals(trans.sellerUser) && !req.user._id.equals(trans.buyerUser)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
+
+            let isFullyComplete = false;
 
             if (trans.status === TransactionStatus.pending) {
                 this._agenda.schedule('in 1 day', 'closeCompletedTransaction', {
@@ -232,14 +247,19 @@ export class TransactionController {
                 });
 
                 trans.status = TransactionStatus.inCompletion;
+                trans.firstCompleteUser = req.user._id;
                 await trans.save();
             } else if (trans.status === TransactionStatus.inCompletion) {
+                isFullyComplete = true;
                 await this._completeTransaction(trans);
             } else {
                 throw new ApiError(ErrorCode.BadTransactionStatus);
             }
 
-            res.send({ status: 'ok' });
+            res.send({
+                status: 'ok',
+                isFullyComplete
+            });
         } catch (err) {
             next(err);
         }

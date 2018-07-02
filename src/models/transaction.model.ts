@@ -14,6 +14,8 @@ export class TransactionSchema extends mongoose.Schema implements ITransaction {
     sellerOffer: IOffer;
     sellerUser: IUserModel;
 
+    firstCompleteUser: IUserModel;
+
     book: IBook;
     bookStatus: BookStatus;
     additionalMaterial: boolean;
@@ -40,6 +42,11 @@ export class TransactionSchema extends mongoose.Schema implements ITransaction {
                 type: mongoose.Schema.Types.ObjectId
             },
             sellerUser: {
+                ref: 'User',
+                type: mongoose.Schema.Types.ObjectId
+            },
+
+            firstCompleteUser: {
                 ref: 'User',
                 type: mongoose.Schema.Types.ObjectId
             },

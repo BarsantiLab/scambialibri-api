@@ -185,7 +185,8 @@ export class OfferController {
                     }));
 
                     outOffer.transaction = {
-                        id: transaction._id
+                        id: transaction._id,
+                        isFirstComplete: transaction.firstCompleteUser && req.user._id.equals(transaction.firstCompleteUser)
                     };
                 } else {
                     // TODO: move to enum

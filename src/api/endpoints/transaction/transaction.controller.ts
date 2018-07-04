@@ -87,7 +87,7 @@ export class TransactionController {
                 }
             }, {
                 isPending: true
-            });
+            }, { multi: true });
 
             const sellerUser: IUser = await User.findById(seller.user).populate('school');
             const sellerBook: IBook = await Book.findById(seller.book);

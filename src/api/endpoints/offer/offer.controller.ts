@@ -104,7 +104,7 @@ export class OfferController {
                     };
 
                     outOffer.messages = transaction.messages.map((msg: IMessageModel) => ({
-                        send: (msg.from as any).equals(req.user._id),
+                        sent: req.user._id.equals(msg.from),
                         content: msg.content,
                         date: msg.date
                     }));

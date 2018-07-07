@@ -42,16 +42,39 @@ MongoClient.connect(URL, (err, client) => {
                     }, (err, paired) => {
                         if (err) return cb(err);
                         alreadyPaired.push(paired._id.toString());
-    
-                        db.dest.collection('offers').insertMany([
-                            getOffer(e, true),
-                            getOffer(paired, true)
-                        ], (err, offers) => {
+
+                        let offers = [];
+                        let messages = [];
+
+                        async.parallel({
+                            offers: offerCb => {
+                                db.dest.collection('offers').insertMany([
+                                    getOffer(e, true),
+                                    getOffer(paired, true)
+                                ], (err, off) => {
+                                    if (err) return offerCb(err);
+                                    offers = off.ops;
+                                    offerCb(); 
+                                });
+                            },
+
+                            messages: messCb => {
+                                db.source.collection('messages').find({
+                                    _id: {
+                                        $in: e.messages
+                                    }
+                                }).toArray((err, msg) => {
+                                    if (err) return messCb(err);
+                                    messages = msg;
+                                    messCb();
+                                });
+                            }
+                        }, err => {
                             if (err) return cb(err);
-    
-                            const sellOffer = offers.ops.find(e => e.type === 'sell');
-                            const buyOffer = offers.ops.find(e => e.type === 'buy');
-                            
+
+                            const sellOffer = offers.find(e => e.type === 'sell');
+                            const buyOffer = offers.find(e => e.type === 'buy');
+
                             db.dest.collection('transactions').insertOne({
                                 status: e.status,
                                 buyerOffer: buyOffer._id,
@@ -63,9 +86,39 @@ MongoClient.connect(URL, (err, client) => {
                                 bookStatus: sellOffer.bookStatus,
                                 additionalMaterial: sellOffer.additionalMaterial,
     
-                                messages: e.messages,
+                                messages: [],
                                 createdAt: e.pairingDate
-                            }, err => cb(err));
+                            }, (err, trans) => {
+                                if (err) return cb(err);
+                                console.log('   - Transaction ID: ' + trans.ops[0]._id);
+
+                                const outMsg = messages.map(m => ({
+                                    from: m.from,
+                                    to: m.to,
+                                    transaction: trans.ops[0]._id,
+                                    content: m.content,
+                                    date: m.date
+                                }));
+
+                                console.log('   - Messages: ' + outMsg.length);
+
+                                if (outMsg.length > 0) {
+                                    db.dest.collection('messages').insertMany(outMsg, (err, docs) => {
+                                        if (err) return cb(err);
+                                        const ids = docs.ops.map(d => d._id);
+
+                                        db.dest.collection('transactions').updateOne({
+                                            _id: trans.ops[0]._id
+                                        }, {
+                                            $set: {
+                                                messages: ids
+                                            }
+                                        }, err => cb(err));
+                                    });
+                                } else {
+                                    cb();
+                                }
+                            });
                         });
                     });
                 }

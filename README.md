@@ -2,40 +2,50 @@
 
 **Scambialibri** è una piattaforma Web per la compravendita di libri scolastici trasversalmente all'istituto di appartenenza, mettendo in comunicazione i venditori con gli eventuali compratori.
 
-## Getting Started
+### Prerequisiti
 
-Per avviare il progetto sulla macchina locale è sufficiente lanciare questi comandi:
+Per poter girare correttamente ha bisogno dei seguenti software:
+
+- Node.js v8+
+- MongoDB 3+
+- Gulp 3.9+ (per la compilazione dei template delle e-mail)
+- Shell bash (per lo script di deploy, non fondamentale)
+
+### Installazione
+
+Per installare il progetto si può usare il seguente script:
+
+```sh
+git clone git@github.com:BarsantiLab/scambialibri-api.git
+cd scambialibri-api
+npm install
+```
+
+Quando il progetto sarà pullato e i moduli installati lanciare Gulp per compilare i template delle e-mail:
 
 ```
-npm install
+gulp mail
+```
+
+Una volta completato anche questo processo il server è pronto per essere avviato.
+
+### Avvio
+
+Per avviare il progetto sulla macchina locale è sufficiente lanciare questo comando:
+
+```
 npm start
 ```
 
-### Prerequisites
+Il server cercherà di connettersi automaticamente al database MongoDB all'indirizzo `mongodb://localhost/Scambialibri` e sarà raggiungibile alla porta `8080`. Per cambiare i valori consultare la sezione [Configurazione](#configurazione).
 
-What things you need to install the software and how to install them
+## Configurazione
 
-```
-Give examples
-```
+Il server accetta una serie di parametri di configurazione impostati come variabili d'ambiente. Si possono trovare al file [config.ts](src/core/config.ts) e vengono caricati all'avvio, quindi è necessario un riavvio se vengono variati. Questa è la lista delle opzioni:
 
-### Installing
-
-A step by step series of examples that tell you have to get a development env running
-
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
+Nome variabile|Descrizione
+---|---
+`
 
 ## Running the tests
 

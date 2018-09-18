@@ -8,6 +8,7 @@ import * as minimist from 'minimist';
 dotenv.config();
 
 // IMPROVE: integrate https://github.com/mozilla/node-convict
+// TODO: parameters explanations
 
 const defaultConf = {
     debug: {

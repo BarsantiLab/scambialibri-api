@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
 
 import { IBook, IBookModel } from 'interfaces/book.interface';
+import { IGrade } from 'interfaces/grade.interface';
 
 export class BookSchema extends mongoose.Schema implements IBook {
     isbn: string;
@@ -9,6 +10,7 @@ export class BookSchema extends mongoose.Schema implements IBook {
     subtitle: string;
     price: number;
     custom: boolean;
+    grades: IGrade[];
 
     constructor() {
         super({
@@ -19,7 +21,12 @@ export class BookSchema extends mongoose.Schema implements IBook {
             subtitle: String,
             title: String,
 
-            custom: Boolean
+            custom: Boolean,
+
+            grades: [{
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Grade'
+            }]
         });
     }
 }

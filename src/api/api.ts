@@ -16,6 +16,7 @@ import * as express from 'express';
 import * as helmet from 'helmet';
 import * as http from 'http';
 import * as passport from 'passport';
+import * as path from 'path';
 
 @injectable()
 export class Api {
@@ -28,7 +29,7 @@ export class Api {
         private _db: Db,
         private _passport: PassportConfiguration,
         private _route: RouterFactory,
-        private _responseService: ResponseService
+        private _responseService: ResponseService,
     ) { }
 
     async setup(): Promise<any> {
@@ -68,6 +69,8 @@ export class Api {
 
         // Setup logging middleware
         this._logger.setupApp(this._app);
+
+        this._app.use('/assets', express.static(path.resolve('assets')));
 
         // Setup controllers routes
         this._app.use(this._route.router);

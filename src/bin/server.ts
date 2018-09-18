@@ -8,8 +8,7 @@ import { Api } from 'api/api';
 
 import * as errorHandler from 'utils/error-handling';
 
-let log: Logger;
-log = InversifyContainer.get<Logger>(Logger);
+const log: Logger = InversifyContainer.get<Logger>(Logger);
 
 process.on('unhandledRejection', handleRejections.bind(this));
 process.on('uncaughtException', handleRejections.bind(this));

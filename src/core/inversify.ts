@@ -6,10 +6,12 @@ import { Logger } from 'core/log';
 import { PassportConfiguration } from 'core/passport';
 import { Policy } from 'core/policy';
 
+import { AgendaService } from 'services/agenda.service';
 import { AuthService } from 'services/auth.service';
 import { GeoService } from 'services/geo.service';
 import { MailService } from 'services/mail.service';
 import { ResponseService } from 'services/response.service';
+import { TransactionService } from 'services/transaction.service';
 
 import { BookRoute } from 'api/endpoints/book/book.route';
 import { SchoolRoute } from 'api/endpoints/school/school.route';
@@ -39,10 +41,12 @@ InversifyContainer.bind<Logger>(Logger).toSelf().inSingletonScope();
 InversifyContainer.bind<PassportConfiguration>(PassportConfiguration).toSelf();
 InversifyContainer.bind<Policy>(Policy).toSelf();
 
+InversifyContainer.bind<AgendaService>(AgendaService).toSelf().inSingletonScope();
 InversifyContainer.bind<AuthService>(AuthService).toSelf();
 InversifyContainer.bind<GeoService>(GeoService).toSelf();
 InversifyContainer.bind<MailService>(MailService).toSelf();
 InversifyContainer.bind<ResponseService>(ResponseService).toSelf();
+InversifyContainer.bind<TransactionService>(TransactionService).toSelf();
 
 InversifyContainer.bind<BookRoute>(BookRoute).toSelf();
 InversifyContainer.bind<SchoolRoute>(SchoolRoute).toSelf();

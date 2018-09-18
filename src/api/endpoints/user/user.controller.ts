@@ -18,6 +18,8 @@ import { User } from 'models/user.model';
 import { GeoService } from 'services/geo.service';
 import { MailService } from 'services/mail.service';
 
+import { hashPassword, uuid } from 'utils/crypt';
+
 @injectable()
 export class UserController {
     constructor(
@@ -28,40 +30,50 @@ export class UserController {
     login(req: IRequestSessionHandler, res, next) {
         try {
             passport.authenticate('local-login', (err, user, info) => {
-                if (err) throw new ApiError(ErrorCode.InternalServerError, err);
-                if (!user) throw new ApiError(ErrorCode.Unauthorized);
+                try {
+                    console.log(err);
+                    if (err) throw err;
+                    if (!user) throw new ApiError(ErrorCode.Unauthorized);
 
-                res.send({
-                    id: user._id.toString(),
-                    accessToken: user.accessToken,
-                    onboardingCompleted: user.onboardingCompleted
-                });
+                    res.send({
+                        id: user._id.toString(),
+                        accessToken: user.accessToken,
+                        onboardingCompleted: user.onboardingCompleted
+                    });
+                } catch (err) {
+                    next(err);
+                }
             })(req, res, next);
         } catch (err) {
             next(err);
         }
     }
 
-    logout(req, res) { }
+    logout() { }
 
     async signup(req, res, next) {
         try {
             passport.authenticate('local-signup', async (err, user: IUser, info) => {
-                if (err) {
-                    if (err.errorCodeObject.code === 1005) throw new ApiError(ErrorCode.DuplicateMail, err);
-                    throw new ApiError(ErrorCode.InternalServerError, err);
-                }
-
-                await this._mail.send({
-                    template: 'confirm-account',
-                    to: user.mail,
-                    subject: 'Scambialibri.it - conferma account',
-                    data: {
-                        token: user.confirmationToken
+                try {
+                    if (err) {
+                        // TODO: fix?
+                        if (err.errorCodeObject && err.errorCodeObject.code === 1005) throw new ApiError(ErrorCode.DuplicateMail, err);
+                        throw new ApiError(ErrorCode.InternalServerError, err);
                     }
-                });
 
-                res.send({ status: 'ok' });
+                    await this._mail.send({
+                        template: 'confirm-account',
+                        to: user.mail,
+                        subject: 'Conferma account',
+                        data: {
+                            token: user.confirmationToken
+                        }
+                    });
+
+                    res.send({ status: 'ok' });
+                } catch (err) {
+                    next(err);
+                }
             })(req, res, next);
         } catch (err) {
             next(err);
@@ -127,7 +139,6 @@ export class UserController {
             const loc = geoData.results[0].geometry.location;
             user.coords = [loc.lng, loc.lat];
 
-            console.log((user as any)._id);
             await User.findByIdAndUpdate((user as any)._id, user);
             res.send({ status: 'ok' });
         } catch (err) {
@@ -181,19 +192,50 @@ export class UserController {
             next(err);
         }
     }
+
+    async recoverPassword(req, res, next) {
+        try {
+            const user = await User.findOne({ mail: req.body.mail });
+            if (!user) throw new ApiError(ErrorCode.UserNotFound, { mail: req.body.mail });
+
+            const token = uuid(32);
+
+            await User.findOneAndUpdate({
+                mail: req.body.mail
+            }, {
+                passwordResetToken: token
+            });
+
+            await this._mail.send({
+                template: 'forgot-password',
+                to: user.mail,
+                subject: 'Password dimenticata',
+                data: { token }
+            });
+
+            res.send({ status: 'ok' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async setNewPassword(req, res, next) {
+        try {
+            const user = await User.findOne({ passwordResetToken: req.body.token });
+            if (!user) throw new ApiError(ErrorCode.UserNotFound);
+
+            const newHash = hashPassword(req.body.password);
+
+            await User.findOneAndUpdate({
+                _id: (user as any)._id
+            }, {
+                password: newHash,
+                passwordResetToken: null
+            });
+
+            res.send({ status: 'ok' });
+        } catch (err) {
+            next(err);
+        }
+    }
 }
-
-// import { User, UserRole } from 'models/user.model';
-// import { hashPassword } from 'utils/crypt';
-
-// (async () => {
-//     const u = new User({
-//         activated: true,
-//         mail: 'davide.ross93@gmail.com',
-//         password: hashPassword('davide12'),
-//         role: UserRole.administrator
-//     });
-
-//     await u.save();
-//     console.log(u);
-// })();

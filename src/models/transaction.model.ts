@@ -10,6 +10,9 @@ export class TransactionSchema extends mongoose.Schema implements ITransaction {
     seller: IUser;
     buyer: IUser;
 
+    paired: ITransaction;
+    pairingDate: Date;
+
     book: IBook;
     bookStatus: BookStatus;
     additionalMaterial: boolean;
@@ -34,6 +37,14 @@ export class TransactionSchema extends mongoose.Schema implements ITransaction {
                 ref: 'Book',
                 type: mongoose.Schema.Types.ObjectId
             },
+
+            paired: {
+                ref: 'Transaction',
+                type: mongoose.Schema.Types.ObjectId,
+                default: null
+            },
+
+            pairingDate: Date,
 
             additionalMaterial: Boolean,
             bookStatus: String,

@@ -1,17 +1,24 @@
+import * as dotenv from 'dotenv';
 import * as _ from 'lodash';
-// import { checkExist } from 'utils/promise-fs';
 
 import { injectable } from 'inversify';
+import * as minimist from 'minimist';
+
+// WARN: check for env file existance
+dotenv.config();
+
+// IMPROVE: integrate https://github.com/mozilla/node-convict
 
 const defaultConf = {
     debug: {
         sendErrorsToClient: true,
-        sendStackToClient: true
+        sendStackToClient: true,
+        preventMailSending: false
     },
 
     google: {
         geoUrl: 'https://maps.googleapis.com/maps/api/geocode/json',
-        token: 'AIzaSyDassqWcpf1kl0v4_T8ZiVtgOZYatrLs3w'
+        token: process.env.SL_GOOGLE_TOKEN
     },
 
     http: {
@@ -25,17 +32,17 @@ const defaultConf = {
     },
 
     mail: {
-        apiKey: 'key-fee6b455d644bedebf9f5a53a08feaf7',
-        domain: 'sandbox470e6f41e2444c1daeeeffea13957418.mailgun.org',
-        from: 'noreply@scambialibri.it',
-        baseDomain: 'http://localhost:8080'
+        apiKey: process.env.SL_MAILGUN_API_KEY,
+        domain: process.env.SL_MAILGUN_DOMAIN,
+        baseDomain: process.env.SL_MAIL_DOMAIN,
+        from: 'noreply@loscambialibri.it',
     },
 
     mongo: {
-        database: 'Scambialibri',
-        host: 'localhost',
-        password: null,
-        user: null
+        database: process.env.SL_MONGO_DB,
+        host: process.env.SL_MONGO_HOST,
+        password: process.env.SL_MONGO_PASSWORD,
+        user: process.env.SL_MONGO_USER
     },
 
     test: {
@@ -99,12 +106,14 @@ export class Configuration {
     debug: {
         sendStackToClient: boolean;
         sendErrorsToClient: boolean;
+        preventMailSending: boolean;
     };
 
     constructor() {
-        this.setConfiguration();
+        const argv = minimist(process.argv.slice(2));
+        if (argv.port) defaultConf.http.port = argv.port;
 
-        // TODO: load configuration from env/cmd line arguments
+        this.setConfiguration();
     }
 
     setConfiguration(conf: object = {}) {

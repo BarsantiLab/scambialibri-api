@@ -39,6 +39,7 @@ export class Logger {
             transports: this.transports
         });
 
+        this.log.info(`Current environment: ${process.env.NODE_ENV}`);
         this.log.info(`Logger: log level ${this._config.log.level}`);
     }
 

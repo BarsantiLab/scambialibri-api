@@ -48,13 +48,8 @@ export class PassportConfiguration {
             try {
                 const user = await User.findOne({ mail });
 
-                if (!user) {
-                    throw new ApiError(ErrorCode.UserNotFound);
-                }
-
-                if (!bcrypt.compareSync(password, user.password)) {
-                    throw new ApiError(ErrorCode.UserInvalidPassword);
-                }
+                if (!user) return done(null, null);
+                if (!bcrypt.compareSync(password, user.password)) throw new ApiError(ErrorCode.UserInvalidPassword);
 
                 const expiration = this._config.token.expiration;
                 const token = await this._authService.createToken(user, expiration, TokenLevel.authenticate);

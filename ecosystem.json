@@ -1,0 +1,11 @@
+{
+    "apps": [{
+        "name": "Scambialibri - API",
+        "script": "release/js/bin/server.js",
+        "exec_interpreter": "node@8.11.1",
+        "env": {
+            "NODE_ENV": "development"
+        },
+        "args": "--port 23000"
+    }]
+}

@@ -15,7 +15,7 @@ export class BookController {
         if (req.query.grade) filterObj.grades = new mongoose.Types.ObjectId(req.query.grade);
 
         try {
-            const books: IBook[] = await Book.find(filterObj).exec();
+            const books: IBook[] = await Book.find(filterObj);
             const booksOut: any[] = [];
 
             const queryObj: any = {};
@@ -38,9 +38,13 @@ export class BookController {
                     book: (book as any)._id
                 });
 
+                // Skip books with updated transactions
+                if (trans && trans.status !== 'free') continue;
+
                 if (trans) {
                     outObj.transaction = {
                         id: (trans as any)._id.toString(),
+                        status: trans.status,
                         bookStatus: trans.bookStatus,
                         additionalMaterial: trans.additionalMaterial
                     };

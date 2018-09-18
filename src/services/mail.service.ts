@@ -6,13 +6,15 @@ import * as path from 'path';
 import * as fs from 'utils/promise-fs';
 
 import { Configuration } from 'core/config';
+import { Logger } from 'core/log';
 
 @injectable()
 export class MailService {
-    _mailgunService: any;
+    private _mailgunService: any;
 
     constructor(
-        private _config: Configuration
+        private _config: Configuration,
+        private _log: Logger
     ) {
         this._mailgunService = Mailgun({
             apiKey: this._config.mail.apiKey,
@@ -21,6 +23,11 @@ export class MailService {
     }
 
     async send(conf: IMailConfiguration) {
+        if (this._config.debug.preventMailSending) {
+            this._log.debug(`Mail skipped by configuration: "${conf.subject}" (${conf.to})`);
+            return;
+        }
+
         let template: string = await fs.readFile(path.resolve(`release/js/mails/${conf.template}.html`));
 
         if (conf.data) {
@@ -36,12 +43,13 @@ export class MailService {
         const mailData: any = {
             from: this._config.mail.from,
             to: conf.to,
-            subject: conf.subject,
+            subject: `LoScambialibri.it - ${conf.subject}`,
             html: template
         };
 
         return new Promise((resolve, reject) => {
             this._mailgunService.messages().send(mailData, (err, body) => {
+                this._log.info(`Mail sent: "${mailData.subject}" (${mailData.to})`);
                 if (err) return reject(err);
                 resolve(body);
             });

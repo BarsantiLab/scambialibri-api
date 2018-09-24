@@ -32,9 +32,7 @@ export class Db {
                 this.connection = mongoose.connection;
                 resolve();
             } else {
-                mongoose.connect(uri, {
-                    useMongoClient: true
-                }, err => {
+                mongoose.connect(uri, err => {
                     if (err) {
                         return reject(err);
                     }

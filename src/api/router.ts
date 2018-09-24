@@ -6,6 +6,8 @@ import { SchoolRoute } from 'api/endpoints/school/school.route';
 import { TransactionRoute } from 'api/endpoints/transaction/transaction.route';
 import { UserRoute } from 'api/endpoints/user/user.route';
 
+import { StatsRoute } from 'api/endpoints/stats/stats.route';
+
 import * as express from 'express';
 
 import { ApiError, ErrorCode } from 'core/error-codes';
@@ -19,7 +21,9 @@ export class RouterFactory {
         private _offerRoute: OfferRoute,
         private _schoolRoute: SchoolRoute,
         private _transactionRoute: TransactionRoute,
-        private _userRoute: UserRoute
+        private _userRoute: UserRoute,
+
+        private _statsRoute: StatsRoute
     ) {
         this.router = express.Router();
 
@@ -28,6 +32,8 @@ export class RouterFactory {
         this._schoolRoute.setupRoutes(this.router);
         this._transactionRoute.setupRoutes(this.router);
         this._userRoute.setupRoutes(this.router);
+
+        this._statsRoute.setupRoutes(this.router);
 
         this.router.all('*', (req, res, next) => {
             next(new ApiError(ErrorCode.EndpointNotFound));

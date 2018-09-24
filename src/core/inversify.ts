@@ -15,12 +15,14 @@ import { ResponseService } from 'services/response.service';
 import { BookRoute } from 'api/endpoints/book/book.route';
 import { OfferRoute } from 'api/endpoints/offer/offer.route';
 import { SchoolRoute } from 'api/endpoints/school/school.route';
+import { StatsRoute } from 'api/endpoints/stats/stats.route';
 import { TransactionRoute } from 'api/endpoints/transaction/transaction.route';
 import { UserRoute } from 'api/endpoints/user/user.route';
 
 import { BookController } from 'api/endpoints/book/book.controller';
 import { OfferController } from 'api/endpoints/offer/offer.controller';
 import { SchoolController } from 'api/endpoints/school/school.controller';
+import { StatsController } from 'api/endpoints/stats/stats.controller';
 import { TransactionController } from 'api/endpoints/transaction/transaction.controller';
 import { UserController } from 'api/endpoints/user/user.controller';
 
@@ -52,12 +54,14 @@ InversifyContainer.bind<ResponseService>(ResponseService).toSelf();
 InversifyContainer.bind<BookRoute>(BookRoute).toSelf();
 InversifyContainer.bind<OfferRoute>(OfferRoute).toSelf();
 InversifyContainer.bind<SchoolRoute>(SchoolRoute).toSelf();
+InversifyContainer.bind<StatsRoute>(StatsRoute).toSelf();
 InversifyContainer.bind<TransactionRoute>(TransactionRoute).toSelf();
 InversifyContainer.bind<UserRoute>(UserRoute).toSelf();
 
 InversifyContainer.bind<BookController>(BookController).toSelf();
 InversifyContainer.bind<OfferController>(OfferController).toSelf();
 InversifyContainer.bind<SchoolController>(SchoolController).toSelf();
+InversifyContainer.bind<StatsController>(StatsController).toSelf();
 InversifyContainer.bind<TransactionController>(TransactionController).toSelf();
 InversifyContainer.bind<UserController>(UserController).toSelf();
 

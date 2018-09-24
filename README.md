@@ -45,7 +45,14 @@ Il server accetta una serie di parametri di configurazione impostati come variab
 
 Nome variabile|Descrizione
 ---|---
-`
+`SL_GOOGLE_TOKEN`|
+`SL_MAILGUN_API_KEY`|
+`SL_MAILGUN_DOMAIN`|
+`SL_MAIL_DOMAIN`|
+`SL_MONGO_DB`|
+`SL_MONGO_HOST`|
+`SL_MONGO_PASSWORD`|
+`SL_MONGO_USER`|
 
 ## Running the tests
 

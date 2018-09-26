@@ -39,7 +39,7 @@ export class AgendaService {
             if (err) {
                 this._log.error(err.name + ': ' + err.message);
             } else {
-                this._log.info(`Job '${jobName} completed!`);
+                this._log.info(`Job '${jobName}' completed!`);
             }
         });
     }

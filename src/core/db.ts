@@ -24,7 +24,7 @@ export class Db {
         const uri = `mongodb://${auth}${this._config.mongo.host}/${this._config.mongo.database}`;
 
         // Prevent mongoose Promise deprecation message
-        (mongoose as any).Promise = global.Promise;
+        // (mongoose as any).Promise = global.Promise;
 
         return new Promise((resolve, reject) => {
             if (mongoose.connection.readyState) {
@@ -32,9 +32,7 @@ export class Db {
                 this.connection = mongoose.connection;
                 resolve();
             } else {
-                mongoose.connect(uri, {
-                    useMongoClient: true
-                }, err => {
+                mongoose.connect(uri, err => {
                     if (err) {
                         return reject(err);
                     }
@@ -51,9 +49,6 @@ export class Db {
         await Promise.all([
             User.remove({}),
             Token.remove({})
-            // Show.remove({}),
-            // Season.remove({}),
-            // Episode.remove({})
         ]);
     }
 

@@ -14,7 +14,7 @@ const defaultConf = {
     debug: {
         sendErrorsToClient: true,
         sendStackToClient: true,
-        preventMailSending: false
+        preventMailSending: process.env.SL_PREVENT_MAIL_SENDING === 'true' || false
     },
 
     google: {

@@ -2,16 +2,19 @@ import * as mongoose from 'mongoose';
 
 import { IBook } from 'interfaces/book.interface';
 import { IMessage } from 'interfaces/message.interface';
+import { IOffer } from 'interfaces/offer.interface';
 import { ITransaction, ITransactionModel, TransactionStatus } from 'interfaces/transaction.interface';
-import { BookStatus, IUser } from 'interfaces/user.interface';
+import { BookStatus, IUserModel } from 'interfaces/user.interface';
 
 export class TransactionSchema extends mongoose.Schema implements ITransaction {
     status: TransactionStatus;
-    seller: IUser;
-    buyer: IUser;
 
-    paired: ITransaction;
-    pairingDate: Date;
+    buyerOffer: IOffer;
+    buyerUser: IUserModel;
+    sellerOffer: IOffer;
+    sellerUser: IUserModel;
+
+    firstCompleteUser: IUserModel;
 
     book: IBook;
     bookStatus: BookStatus;
@@ -19,16 +22,31 @@ export class TransactionSchema extends mongoose.Schema implements ITransaction {
 
     messages: [IMessage];
 
+    createdAt: Date;
+
     constructor() {
         super({
             status: String,
 
-            seller: {
+            buyerOffer: {
+                ref: 'Offer',
+                type: mongoose.Schema.Types.ObjectId
+            },
+            buyerUser: {
                 ref: 'User',
                 type: mongoose.Schema.Types.ObjectId
             },
 
-            buyer: {
+            sellerOffer: {
+                ref: 'Offer',
+                type: mongoose.Schema.Types.ObjectId
+            },
+            sellerUser: {
+                ref: 'User',
+                type: mongoose.Schema.Types.ObjectId
+            },
+
+            firstCompleteUser: {
                 ref: 'User',
                 type: mongoose.Schema.Types.ObjectId
             },
@@ -37,22 +55,15 @@ export class TransactionSchema extends mongoose.Schema implements ITransaction {
                 ref: 'Book',
                 type: mongoose.Schema.Types.ObjectId
             },
-
-            paired: {
-                ref: 'Transaction',
-                type: mongoose.Schema.Types.ObjectId,
-                default: null
-            },
-
-            pairingDate: Date,
-
             additionalMaterial: Boolean,
             bookStatus: String,
 
             messages: [{
                 ref: 'Message',
                 type: mongoose.Schema.Types.ObjectId
-            }]
+            }],
+
+            createdAt: Date
         });
     }
 }

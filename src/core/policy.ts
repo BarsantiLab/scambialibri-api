@@ -29,9 +29,11 @@ export class Policy {
     }
 
     private _isAdministrator(req, res): Promise<any> {
+        console.log('here');
         return new Promise((resolve, reject) => {
             passport.authenticate('bearer')(req, res, () => {
-                if (req.user.role !== Role.administrator) reject({ status: 403 });
+                console.log(req.user);
+                if (!req.user.administrator) reject({ status: 403 });
                 else resolve();
             });
         });
@@ -40,7 +42,7 @@ export class Policy {
     private _isUser(req, res): Promise<any> {
         return new Promise((resolve, reject) => {
             passport.authenticate('bearer')(req, res, () => {
-                if (req.user.role !== Role.user) reject({ status: 403 });
+                if (req.user.administrators) reject({ status: 403 });
                 else resolve();
             });
         });

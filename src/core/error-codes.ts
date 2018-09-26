@@ -11,7 +11,10 @@ export enum ErrorCode {
     TransactionNotFound,
     SpecializationNotRelatedToSchool,
     GradeNotRelatedToSpecializationOrSchool,
-    DuplicateTransaction,
+    DuplicateOffer,
+    OfferNotFound,
+    OfferNotRelatedToUser,
+    OfferIsAlreadyPaired,
     TransactionNotRelatedToUser,
     BadTransactionStatus,
 
@@ -122,8 +125,8 @@ const errors: IErrorCodeObject[] = [{
     status: 404
 }, {
     code: 3006,
-    label: ErrorCode.DuplicateTransaction,
-    message: 'Duplicate transaction',
+    label: ErrorCode.DuplicateOffer,
+    message: 'Duplicate offer',
     status: 400
 }, {
     code: 3007,
@@ -134,6 +137,21 @@ const errors: IErrorCodeObject[] = [{
     code: 3008,
     label: ErrorCode.BadTransactionStatus,
     message: 'Bad transaction status',
+    status: 400
+}, {
+    code: 3009,
+    label: ErrorCode.OfferNotFound,
+    message: 'Offer not found',
+    status: 404
+}, {
+    code: 3010,
+    label: ErrorCode.OfferNotRelatedToUser,
+    message: 'Offer not related to user',
+    status: 400
+}, {
+    code: 3011,
+    label: ErrorCode.OfferIsAlreadyPaired,
+    message: 'Offer is already paired',
     status: 400
 }, {
     code: 9996,

@@ -35,6 +35,7 @@ export interface IUser {
     transactions: ITransaction[];
 }
 
+// TODO: move to book.interface
 export enum BookStatus {
     new = 'new',
     pencilNotes = 'pencilNotes',

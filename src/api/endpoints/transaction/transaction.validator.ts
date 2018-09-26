@@ -7,10 +7,8 @@ export class TransactionValidator {
         validate({
             object: req.body,
             schema: Joi.object().keys({
-                book: Joi.string().objectId().required(),
-                mode: Joi.string().bookMode().required(),
-                bookStatus: Joi.string().bookStatus(),
-                additionalMaterial: Joi.boolean()
+                buyer: Joi.string().objectId().required(),
+                seller: Joi.string().objectId().required()
             })
         }, next);
     }
@@ -40,20 +38,6 @@ export class TransactionValidator {
                 id: Joi.string().objectId().required()
             })
         }, next);
-    }
-
-    pairTransaction(req, res, next) {
-        validate([{
-            object: req.params,
-            schema: Joi.object().keys({
-                id: Joi.string().objectId().required()
-            })
-        }, {
-            object: req.body,
-            schema: Joi.object().keys({
-                transaction: Joi.string().objectId().required()
-            })
-        }], next);
     }
 
     sendMessage(req, res, next) {

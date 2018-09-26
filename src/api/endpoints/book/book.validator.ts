@@ -8,7 +8,8 @@ export class BookValidator {
             object: req.query,
             schema: Joi.object().keys({
                 grade: Joi.string().objectId(),
-                mode: Joi.string().bookMode().required()
+                // TODO: convert to offertype
+                type: Joi.string().bookMode().required()
             })
         }, next);
     }

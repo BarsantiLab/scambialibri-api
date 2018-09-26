@@ -1,47 +1,46 @@
 import { injectable } from 'inversify';
-import * as moment from 'moment';
-import * as mongoose from 'mongoose';
 import * as sanitize from 'sanitize-html';
 
 import { ApiError, ErrorCode } from 'core/error-codes';
 
-import { IBook } from 'interfaces/book.interface';
-import { IMessage } from 'interfaces/message.interface';
-import { ITransaction, TransactionStatus } from 'interfaces/transaction.interface';
-import { BookStatus } from 'interfaces/user.interface';
+import { IBook, IBookModel } from 'interfaces/book.interface';
+import { IMessageModel } from 'interfaces/message.interface';
+import { IOfferModel } from 'interfaces/offer.interface';
+import { ITransactionModel, TransactionStatus} from 'interfaces/transaction.interface';
+import { IUser, IUserModel } from 'interfaces/user.interface';
 
 import { Book } from 'models/book.model';
 import { Message } from 'models/message.model';
+import { Offer } from 'models/offer.model';
 import { Transaction } from 'models/transaction.model';
+import { User } from 'models/user.model';
 
 import { AgendaService } from 'services/agenda.service';
 import { MailService } from 'services/mail.service';
-import { TransactionService } from 'services/transaction.service';
+import { OfferController } from '../offer/offer.controller';
 
 // TODO: rework on "not responding" feature: enabled if the transaction last message pushed is older than 24h
 // TODO: add last message pushed date on transaction
-// TODO: fix first report completing mail
 
 @injectable()
 export class TransactionController {
     constructor(
+        private _offerCtrl: OfferController,
         private _agenda: AgendaService,
-        private _mail: MailService,
-        private _transactionService: TransactionService
+        private _mail: MailService
     ) {
         // TODO: move jobs declaration in dedicated class
 
         this._agenda.define('closeNotRespondingTransaction', async job => {
-            // TODO: send cancellation mails (to do in service?)
-            const trans: ITransaction = await Transaction.findById(job.attrs.data.id).populate('buyer seller book');
+            const trans: ITransactionModel = await Transaction.findById(job.attrs.data.id).populate('buyerUser sellerUser book');
             if (!trans || trans.status !== TransactionStatus.notResponding) return;
-            this._transactionService.cancelPendingTransaction(trans);
+            this._cancelTransaction(trans);
         });
 
         this._agenda.define('closeCompletedTransaction', async job => {
-            const trans: ITransaction = await Transaction.findById(job.attrs.data.id).populate('buyer seller book');
+            const trans: ITransactionModel = await Transaction.findById(job.attrs.data.id).populate('buyerUser sellerUser book');
             if (!trans || trans.status !== TransactionStatus.inCompletion) return;
-            this._transactionService.completeTransaction(trans);
+            this._completeTransaction(trans);
 
             // TODO: send report to administrator
         });
@@ -49,224 +48,74 @@ export class TransactionController {
 
     async createTransaction(req, res, next) {
         try {
-            const book: IBook = await Book.findById(req.body.book);
-            if (!book) throw new ApiError(ErrorCode.BookNotFound, { id: req.body.book });
+            const buyer: IOfferModel = await Offer.findById(req.body.buyer);
+            if (!buyer) throw new ApiError(ErrorCode.OfferNotFound, { id: req.body.buyer });
+            if (!req.user._id.equals(buyer.user)) throw new ApiError(ErrorCode.OfferNotRelatedToUser, { id: req.body.buyer });
 
-            const transaction: ITransaction = await Transaction.findOne({
-                book: req.body.book,
-                user: req.user._id
+            const seller: IOfferModel = await Offer.findById(req.body.seller);
+            if (!seller) throw new ApiError(ErrorCode.OfferNotFound, { id: req.body.seller });
+
+            const oldTransaction = await Transaction.findOne({
+                $or: [{
+                    buyerOffer: buyer._id
+                }, {
+                    sellerOffer: seller._id
+                }]
             });
 
-            if (transaction) throw new ApiError(ErrorCode.DuplicateTransaction, {
-                transaction: (transaction as any)._id.toString()
-            });
+            if (oldTransaction) throw new ApiError(ErrorCode.OfferIsAlreadyPaired);
 
-            const transactionData: any = {
-                book: mongoose.Types.ObjectId(req.body.book),
+            const newTrans: ITransactionModel = await new Transaction({
+                status: TransactionStatus.pending,
+
+                buyerOffer: buyer._id,
+                buyerUser: buyer.user,
+                sellerOffer: seller._id,
+                sellerUser: seller.user,
+
+                book: seller.book,
+                bookStatus: seller.bookStatus,
+                additionalMaterial: seller.additionalMaterial,
+
                 messages: [],
-                status: TransactionStatus.free
-            };
+                createdAt: new Date()
+            }).save();
 
-            if (req.body.mode === 'sell') {
-                transactionData.seller = req.user._id;
-                transactionData.bookStatus = req.body.bookStatus;
-                transactionData.additionalMaterial = req.body.additionalMaterial;
-            } else {
-                transactionData.buyer = req.user._id;
-            }
+            await Offer.update({
+                _id: {
+                    $in: [buyer._id, seller._id]
+                }
+            }, {
+                isPending: true
+            }, { multi: true });
 
-            const newTransaction: ITransaction = await new Transaction(transactionData).save();
+            const sellerUser: IUser = await User.findById(seller.user).populate('school');
+            const sellerBook: IBook = await Book.findById(seller.book);
 
-            res.send({
-                id: (newTransaction as any)._id.toString(),
-                bookStatus: newTransaction.bookStatus,
-                additionalMaterial: newTransaction.additionalMaterial
+            // Send mail
+            this._mail.send({
+                template: 'new-transaction',
+                to: sellerUser.mail,
+                subject: 'Nuova transazione',
+                data: {
+                    book: sellerBook.title
+                }
             });
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    async getSales(req, res, next) {
-        try {
-            const sales: ITransaction[] = await Transaction.find({
-                seller: req.user._id
-            }).populate('book').exec();
-
-            const out = [];
-
-            for (const trans of sales) {
-                const tmpObj: any = {
-                    id: (trans as any)._id.toString(),
-                    status: trans.status,
-
-                    book: {
-                        author: trans.book.author,
-                        isbn: trans.book.isbn,
-                        title: trans.book.title,
-                        subtitle: trans.book.subtitle
-                    }
-                };
-
-                if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding || trans.status === TransactionStatus.inCompletion) {
-                    const paired: ITransaction = await Transaction.findById(trans.paired).populate({
-                        path: 'buyer',
-                        populate: {
-                            path: 'school',
-                            model: 'School'
-                        }
-                    }).exec();
-
-                    if (!paired) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: trans.paired });
-
-                    if ((trans.messages as IMessage[]).length === 0 && moment().diff(moment(trans.pairingDate), 'd', true) > 1) {
-                        tmpObj.notRespondingEnabled = true;
-                    }
-
-                    tmpObj.pairedUser = {
-                        firstName: paired.buyer.firstName,
-                        lastName: paired.buyer.lastName,
-                        mail: paired.buyer.mail,
-                        address: paired.buyer.address,
-                        province: paired.buyer.province,
-                        city: paired.buyer.city,
-                        phone: paired.buyer.phone,
-                        schoolName: paired.buyer.school.name
-                    };
-
-                    const messages: IMessage[] = await Message.find({
-                        _id: { $in: trans.messages }
-                    });
-
-                    tmpObj.messages = messages.map((msg: IMessage) => ({
-                        sent: (msg.from as any).equals(req.user._id),
-                        content: msg.content,
-                        date: msg.date
-                    }));
-                }
-
-                out.push(tmpObj);
-            }
-
-            res.send(out);
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    async getPurchases(req, res, next) {
-        try {
-            const purchases: ITransaction[] = await Transaction.find({
-                buyer: req.user._id
-            }).populate('book').exec();
-
-            const out = [];
-
-            for (const trans of purchases) {
-                const tmpObj: any = {
-                    id: (trans as any)._id.toString(),
-                    status: trans.status,
-
-                    book: {
-                        author: trans.book.author,
-                        isbn: trans.book.isbn,
-                        title: trans.book.title,
-                        subtitle: trans.book.subtitle
-                    }
-                };
-
-                if (trans.status === TransactionStatus.free) {
-                    const sales: ITransaction[] = await Transaction.find({
-                        book: (trans.book as any)._id,
-                        _id: {
-                            $ne: (trans as any)._id
-                        },
-                        seller: {
-                            $ne: null
-                        }
-                    }).populate('seller').exec();
-
-                    tmpObj.sales = sales.map(sale => ({
-                        id: (sale as any)._id.toString(),
-                        status: sale.status,
-                        bookStatus: sale.bookStatus,
-                        additionalMaterial: sale.additionalMaterial || false,
-                        seller: {
-                            firstName: sale.seller.firstName,
-                            lastName: sale.seller.lastName
-                        },
-                        points: this._getTransactionPoints(sale)
-                    })).sort((a, b) => b.points - a.points);
-                }
-
-                if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding || trans.status === TransactionStatus.inCompletion) {
-                    const paired: ITransaction = await Transaction.findById(trans.paired).populate({
-                        path: 'seller',
-                        populate: {
-                            path: 'school',
-                            model: 'School'
-                        }
-                    }).exec();
-
-                    if (!paired) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: trans.paired });
-
-                    if ((trans.messages as IMessage[]).length === 0 && moment().diff(moment(trans.pairingDate), 'd', true) > 1) {
-                        tmpObj.notRespondingEnabled = true;
-                    }
-
-                    tmpObj.pairedUser = {
-                        firstName: paired.seller.firstName,
-                        lastName: paired.seller.lastName,
-                        mail: paired.seller.mail,
-                        address: paired.seller.address,
-                        province: paired.seller.province,
-                        city: paired.seller.city,
-                        phone: paired.seller.phone,
-                        schoolName: paired.seller.school.name
-                    };
-
-                    const messages: IMessage[] = await Message.find({
-                        _id: { $in: trans.messages }
-                    });
-
-                    tmpObj.messages = messages.map((msg: IMessage) => ({
-                        sent: (msg.from as any).equals(req.user._id),
-                        content: msg.content,
-                        date: msg.date
-                    }));
-                }
-
-                out.push(tmpObj);
-            }
-
-            res.send(out);
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    async pairTransaction(req, res, next) {
-        try {
-            const buyerTrans = await Transaction.findById(req.params.id);
-            if (!buyerTrans) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: req.params.id });
-            if (!req.user._id.equals(buyerTrans.buyer)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser, { transaction: req.params.id });
-
-            const sellerTrans = await Transaction.findById(req.body.transaction).populate('seller');
-            if (!sellerTrans) throw new ApiError(ErrorCode.TransactionNotFound, { transaction: req.body.transaction });
-
-            await this._transactionService.pairTransactions(buyerTrans, sellerTrans);
 
             res.send({
                 status: 'ok',
-                pairedUser: {
-                    firstName: sellerTrans.seller.firstName,
-                    lastName: sellerTrans.seller.lastName,
-                    mail: sellerTrans.seller.mail,
-                    address: sellerTrans.seller.address,
-                    province: sellerTrans.seller.province,
-                    city: sellerTrans.seller.city,
-                    phone: sellerTrans.seller.phone,
-                    schoolName: sellerTrans.seller.school.name
+                seller: {
+                    firstName: sellerUser.firstName,
+                    lastName: sellerUser.lastName,
+                    mail: sellerUser.mail,
+                    address: sellerUser.address,
+                    province: sellerUser.province,
+                    city: sellerUser.city,
+                    phone: sellerUser.phone,
+                    schoolName: sellerUser.school.name
+                },
+                transaction: {
+                    id: newTrans._id
                 }
             });
         } catch (err) {
@@ -276,15 +125,45 @@ export class TransactionController {
 
     async sendMessage(req, res, next) {
         try {
-            const trans: ITransaction = await Transaction.findById(req.params.id);
+            // TODO: move to middleware?
+            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
+            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
 
-            if (!req.user._id.equals(trans.buyer) && !req.user._id.equals(trans.seller)) {
-                throw new ApiError(ErrorCode.TransactionNotRelatedToUser, {
-                    transaction: req.params.id
-                });
+            // Create new message
+            const content = sanitize(req.body.message);
+            const newMessage: IMessageModel = new Message({
+                from: req.user._id,
+                to: req.user._id.equals(trans.buyerUser) ? trans.sellerUser : trans.buyerUser,
+                content,
+                date: new Date()
+            });
+
+            await newMessage.save();
+
+            // Update transaction
+            trans.messages.push(newMessage._id);
+
+            let isBackToPending = false;
+            if (trans.status === TransactionStatus.notResponding) {
+                trans.status = TransactionStatus.pending;
+                isBackToPending = true;
             }
 
-            const isBackToPending = await this._transactionService.sendMessage(trans, sanitize(req.body.message));
+            await trans.save();
+
+            // Send mail
+            const recipient: IUserModel = await User.findById(req.user._id.equals(trans.buyerUser) ? trans.sellerUser : trans.buyerUser);
+            this._mail.send({
+                template: 'new-message',
+                to: recipient.mail,
+                subject: 'Nuovo messaggio',
+                data: {
+                    book: trans.book.title,
+                    message: content
+                }
+            });
+
             res.send({
                 status: 'ok',
                 isBackToPending
@@ -296,51 +175,18 @@ export class TransactionController {
 
     async cancelTransaction(req, res, next) {
         try {
-            const trans: ITransaction = await Transaction.findOne({
-                _id: req.params.id,
-                $or: [{
-                    seller: req.user._id
-                }, {
-                    buyer: req.user._id
-                }]
-            }).populate('seller buyer book');
+            // TODO: move to middleware?
+            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
+            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
+            if (trans.status !== TransactionStatus.pending) throw new ApiError(ErrorCode.BadTransactionStatus);
 
-            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
+            await this._cancelTransaction(trans);
 
-            if (trans.status === TransactionStatus.free) {
-                await this._transactionService.deleteTransaction(trans);
-                res.send({ status: 'ok' });
-            } else if (trans.status === TransactionStatus.pending || trans.status === TransactionStatus.notResponding) {
-                await this._transactionService.cancelPendingTransaction(trans);
-
-                const sales: ITransaction[] = await Transaction.find({
-                    book: (trans.book as any)._id,
-                    _id: {
-                        $ne: (trans as any)._id
-                    },
-                    seller: {
-                        $ne: null
-                    }
-                }).populate('seller').exec();
-
-                // IMPROVE: extract to method
-                res.send({
-                    status: 'ok',
-                    sales: sales.map(sale => ({
-                        id: (sale as any)._id.toString(),
-                        status: sale.status,
-                        bookStatus: sale.bookStatus,
-                        additionalMaterial: sale.additionalMaterial || false,
-                        seller: {
-                            firstName: sale.seller.firstName,
-                            lastName: sale.seller.lastName
-                        },
-                        points: this._getTransactionPoints(sale)
-                    })).sort((a, b) => b.points - a.points)
-                });
-            } else {
-                throw new ApiError(ErrorCode.BadTransactionStatus, { id: req.params.id });
-            }
+            res.send({
+                sales: await this._offerCtrl.getSalesForBook(trans.book as IBookModel),
+                status: 'ok'
+            });
         } catch (err) {
             next(err);
         }
@@ -348,40 +194,22 @@ export class TransactionController {
 
     async reportNotResponding(req, res, next) {
         try {
-            const trans: ITransaction = await Transaction.findOne({
-                _id: req.params.id,
-                $or: [{
-                    seller: req.user._id
-                }, {
-                    buyer: req.user._id
-                }]
-            }).populate('book').exec();
+            // TODO: move to middleware?
+            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('sellerUser buyerUser book');
+            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
+            if (trans.status !== TransactionStatus.pending) throw new ApiError(ErrorCode.BadTransactionStatus);
 
-            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
-
-            if (trans.status !== TransactionStatus.pending || !trans.paired) {
-                throw new ApiError(ErrorCode.BadTransactionStatus, { id: (trans as any)._id });
-            }
-
-            const paired: ITransaction = await Transaction.findById(trans.paired).populate('buyer seller');
-
-            await Transaction.update({
-                _id: {
-                    $in: [(trans as any)._id, (paired as any)._id]
-                }
-            }, {
-                status: TransactionStatus.notResponding
-            }, {
-                multi: true
-            });
+            trans.status = TransactionStatus.notResponding;
+            await trans.save();
 
             this._agenda.schedule('in 1 day', 'closeNotRespondingTransaction', {
-                id: (trans as any)._id
+                id: trans._id
             });
 
             this._mail.send({
                 template: 'not-responding-followup',
-                to: paired.seller ? paired.seller.mail : paired.buyer.mail,
+                to: req.user._id.equals(trans.sellerUser._id) ? trans.buyerUser._id : trans.sellerUser._id,
                 subject: 'Invito di risposta',
                 data: {
                     book: trans.book.title
@@ -396,59 +224,109 @@ export class TransactionController {
 
     async reportCompleted(req, res, next) {
         try {
-            const trans: ITransaction = await Transaction.findOne({
-                _id: req.params.id,
-                $or: [{
-                    seller: req.user._id
-                }, {
-                    buyer: req.user._id
-                }]
-            }).populate('buyer seller book');
+            // TODO: move to middleware?
+            const trans: ITransactionModel = await Transaction.findById(req.params.id).populate('buyerUser sellerUser book');
+            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound);
+            if (!req.user._id.equals(trans.sellerUser._id) && !req.user._id.equals(trans.buyerUser._id)) throw new ApiError(ErrorCode.TransactionNotRelatedToUser);
 
-            if (!trans) throw new ApiError(ErrorCode.TransactionNotFound, { id: req.params.id });
+            let isFullyComplete = false;
 
-            await Transaction.findByIdAndUpdate(req.params.id, {
-                status: TransactionStatus.inCompletion
-            });
-
-            const paired: ITransaction = await Transaction.findById(trans.paired).populate('buyer seller');
-
-            if (paired.status === TransactionStatus.inCompletion) {
-                // Secondo click su completa, chiude la transazione
-                trans.status = TransactionStatus.inCompletion;
-                await this._transactionService.completeTransaction(trans);
-            } else {
-                // Primo click su completa
+            if (trans.status === TransactionStatus.pending) {
                 this._agenda.schedule('in 1 day', 'closeCompletedTransaction', {
-                    id: (trans as any)._id
+                    id: trans._id
                 });
 
                 this._mail.send({
                     template: 'complete-transaction',
-                    to: paired.seller ? paired.seller.mail : paired.buyer.mail,
+                    to: req.user._id.equals(trans.sellerUser._id) ? trans.buyerUser._id : trans.sellerUser._id,
                     subject: 'Completa transazione',
                     data: {
                         book: trans.book.title,
-                        type: paired.seller ? 'sales' : 'purchases'
+                        type: req.user._id.equals(trans.sellerUser._id) ? 'sales' : 'purchases'
                     }
                 });
+
+                trans.status = TransactionStatus.inCompletion;
+                trans.firstCompleteUser = req.user._id;
+                await trans.save();
+            } else if (trans.status === TransactionStatus.inCompletion) {
+                isFullyComplete = true;
+                await this._completeTransaction(trans);
+            } else {
+                throw new ApiError(ErrorCode.BadTransactionStatus);
             }
 
-            res.send({ status: 'ok' });
+            res.send({
+                status: 'ok',
+                isFullyComplete
+            });
         } catch (err) {
             next(err);
         }
     }
 
-    private _getTransactionPoints(sale): number {
-        let bookPoints = 0;
+    private async _cancelTransaction(transaction: ITransactionModel) {
+        await Message.remove({
+            _id: {
+                $in: transaction.messages
+            }
+        });
 
-        switch (sale.bookStatus) {
-            case BookStatus.new: bookPoints += 6; break;
-            case BookStatus.pencilNotes: bookPoints += 4; break;
-            case BookStatus.penNotes: bookPoints += 2; break;
-        }
+        await Offer.update({
+            _id: {
+                $in: [transaction.buyerOffer, transaction.sellerOffer]
+            }
+        }, {
+            isPending: false
+        }, {
+            multi: true
+        });
 
-        return bookPoints + (sale.additionalMaterial ? 1 : 0);
+        await transaction.remove();
+
+        this._mail.send({
+            template: 'transaction-cancelled',
+            to: transaction.sellerUser.mail,
+            subject: 'Transazione cancellata',
+            data: {
+                type: 'la vendita',
+                book: transaction.book.title
+            }
+        });
+
+        this._mail.send({
+            template: 'transaction-cancelled',
+            to: transaction.buyerUser.mail,
+            subject: 'Transazione cancellata',
+            data: {
+                type: 'l\'acquisto',
+                book: transaction.book.title
+            }
+        });
+    }
+
+    private async _completeTransaction(transaction: ITransactionModel) {
+        transaction.status = TransactionStatus.completed;
+        transaction.save();
+
+        this._mail.send({
+            template: 'transaction-completed',
+            to: transaction.sellerUser.mail,
+            subject: 'Transazione completata',
+            data: {
+                type: 'la vendita',
+                book: transaction.book.title
+            }
+        });
+
+        this._mail.send({
+            template: 'transaction-completed',
+            to: transaction.buyerUser.mail,
+            subject: 'Transazione completata',
+            data: {
+                type: 'l\'acquisto',
+                book: transaction.book.title
+            }
+        });
     }
 }

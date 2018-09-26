@@ -2,10 +2,10 @@ import { Document } from 'mongoose';
 
 import { IBook } from './book.interface';
 import { IMessage } from './message.interface';
-import { BookStatus, IUser } from './user.interface';
+import { IOffer } from './offer.interface';
+import { BookStatus, IUserModel } from './user.interface';
 
 export enum TransactionStatus {
-    free = 'free',
     pending = 'pending',
     closed = 'closed',
     notResponding = 'notResponding',
@@ -15,17 +15,21 @@ export enum TransactionStatus {
 
 export interface ITransaction {
     status: TransactionStatus;
-    seller: IUser;
-    buyer: IUser;
 
-    paired: ITransaction;
-    pairingDate: Date;
+    buyerOffer: IOffer;
+    buyerUser: IUserModel;
+    sellerOffer: IOffer;
+    sellerUser: IUserModel;
+
+    firstCompleteUser: IUserModel;
 
     book: IBook;
     bookStatus: BookStatus;
     additionalMaterial: boolean;
 
     messages: [IMessage];
+
+    createdAt: Date;
 }
 
 export interface ITransactionModel extends ITransaction, Document {}

@@ -41,70 +41,53 @@ Il server cercherà di connettersi automaticamente al database MongoDB all'indir
 
 ## Configurazione
 
-Il server accetta una serie di parametri di configurazione impostati come variabili d'ambiente. Si possono trovare al file [config.ts](src/core/config.ts) e vengono caricati all'avvio, quindi è necessario un riavvio se vengono variati. Questa è la lista delle opzioni:
+Il server accetta una serie di parametri di configurazione impostati come variabili d'ambiente. Si possono trovare al file [`config.ts`](src/core/config.ts) e vengono caricati all'avvio, quindi è necessario un riavvio se vengono variati. Questa è la lista delle opzioni:
 
 Nome variabile|Descrizione
 ---|---
-`SL_GOOGLE_TOKEN`|
-`SL_MAILGUN_API_KEY`|
-`SL_MAILGUN_DOMAIN`|
-`SL_MAIL_DOMAIN`|
-`SL_MONGO_DB`|
-`SL_MONGO_HOST`|
-`SL_MONGO_PASSWORD`|
-`SL_MONGO_USER`|
+`SL_GOOGLE_TOKEN`|Token delle API di Google per il servizio di geolocalizzazione
+`SL_MAILGUN_API_KEY`|API key di Mailgun per l'invio delle e-mail
+`SL_MAILGUN_DOMAIN`|Nome del dominio configurato su Mailgun
+`SL_MAIL_DOMAIN`|Dominio base che verrà usato come prefisso sui link cliccabili delle e-mail
+`SL_MONGO_HOST`|Host che ospita il servizio di MongoDB
+`SL_MONGO_USER`|Username per l'accesso a MongoDB. Lasciare vuoto se non utilizzato.
+`SL_MONGO_PASSWORD`|Password per l'accesso a MongoDB. Lasciare vuoto se non utilizzata.
+`SL_MONGO_DB`|Nome del database
+`SL_PREVENT_MAIL_SENDING`|**Debug**: previene l'invio di mail mentre si è in modalità di debug
 
-## Running the tests
+Le variabili d'ambiente si possono impostare anche in un file chiamato `.env`, caricato poi attraverso [`dotenv`](https://github.com/motdotla/dotenv), formattato nelle modalità descritte dallo stesso.
 
-Explain how to run the automated tests for this system
+## Deploy
 
-### Break down into end to end tests
+Per il deploy al momento viene utilizzato un semplice script bash ([`build.sh`](/build.sh)) che compila i sorgenti, crea un archivio compresso con l'output e in base all'environment specificato carica su diverse directory remote tramite `scp`. Dopo aver caricato l'archivio invia un comando via `ssh` per decomprimere l'archivio caricato e riavviare `pm2`, il gestore dei processi.
 
-Explain what these tests test and why
+Per adattarlo alle proprie macchine cambiare le righe 33 e 34 cambiando l'URL, eventualmente l'utente e la path sulla quale vengono caricati gli archivi.
 
-```
-Give an example
-```
+Questo è solo una misura temporanea, in futuro verrà attivato [CircleCI](https://circleci.com/) per le operazioni ci Continuous Integration e Continuous Delivery (vedi [Progetti futuri](#progetti-futuri)).
 
-### And coding style tests
+## Progetti futuri
 
-Explain what these tests test and why
+Questa è una lista delle modifiche future che verranno implementate man mano lato server. Non sono in ordine temporale, né di importanza.
 
-```
-Give an example
-```
+- [ ] Integrazione con [CircleCI](https://circleci.com/) per continuous integration/delivery e [CodeClimate](https://codeclimate.com/) per la quality assurance.
+- [ ] Creazione di un container Docker (probabilmente trasversale a tutti i progetti LoScambialibri.it).
+- [ ] Integrazione di unit testing per le API.
+- [ ] Integrazione di una piattaforma per la documentazione delle API ([Swagger](https://swagger.io/)/[apiDoc](http://apidocjs.com/)).
+- [ ] Integrazione di un broker MQTT per la chat real-time.
+- [ ] Integrazione delle API di amministrazione/statistiche.
+- [ ] Integrazione automatica di una strategia di [SemVer](https://semver.org/).
 
-## Deployment
+## Contributori cercasi!
 
-Add additional notes about how to deploy this on a live system
+LoScambialibri.it è sempre in cerca di menti che si uniscano nel progetto, in modo di condividere le proprie conoscenze e mettersi a confronto con altri colleghi!
 
-## Built With
+Per avere maggiori informazioni consulta [CONTRIBUTING.md](/CONTRIBUTING.md) e leggi su come fare la tua parte!
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+## Autori
 
-## Contributing
+* **Davide Rossetto** - *Reviewer and first maintainer* - [DavideRoss](https://github.com/DavideRoss)
+* **Marco Rubin** - *Presidente di LoScambialibri.it e tester*
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+## Licenza
 
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
-
+Il progetto è coperto dalla licenza MIT - vedere la [LICENSE](LICENSE) per i dettagli.

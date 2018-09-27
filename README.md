@@ -70,7 +70,7 @@ Questo è solo una misura temporanea, in futuro verrà attivato [CircleCI](https
 Questa è una lista delle modifiche future che verranno implementate man mano lato server. Non sono in ordine temporale, né di importanza.
 
 - [ ] Integrazione con [CircleCI](https://circleci.com/) per continuous integration/delivery e [CodeClimate](https://codeclimate.com/) per la quality assurance.
-- [ ] Creazione di un container Docker (probabilmente trasversale a tutti i progetti LoScambialibri.it).
+- [ ] Creazione di un container Docker (trasversale a tutti i progetti LoScambialibri.it).
 - [ ] Integrazione di unit testing per le API.
 - [ ] Integrazione di una piattaforma per la documentazione delle API ([Swagger](https://swagger.io/)/[apiDoc](http://apidocjs.com/)).
 - [ ] Integrazione di un broker MQTT per la chat real-time.
@@ -82,6 +82,10 @@ Questa è una lista delle modifiche future che verranno implementate man mano la
 LoScambialibri.it è sempre in cerca di menti che si uniscano nel progetto, in modo di condividere le proprie conoscenze e mettersi a confronto con altri colleghi!
 
 Per avere maggiori informazioni consulta [CONTRIBUTING.md](/CONTRIBUTING.md) e leggi su come fare la tua parte!
+
+## Progetti di LoScambialibri.it
+
+- [`scambialibri-frontend`](https://github.com/BarsantiLab/scambialibri-frontend): parte frontend che si interfaccia alle API di questo progetto.
 
 ## Autori
 

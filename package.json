@@ -51,6 +51,7 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
+    "@sendgrid/mail": "^6.4.0",
     "@types/bcrypt": "^1.0.0",
     "@types/passport": "^0.4.4",
     "agenda": "^1.0.3",

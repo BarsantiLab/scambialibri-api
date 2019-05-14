@@ -1,30 +1,27 @@
 import { injectable } from 'inversify';
 
 import * as _ from 'lodash';
-import * as Mailgun from 'mailgun-js';
 import * as path from 'path';
 import * as fs from 'utils/promise-fs';
+
+import * as Sendgrid from '@sendgrid/mail';
 
 import { Configuration } from 'core/config';
 import { Logger } from 'core/log';
 
 @injectable()
 export class MailService {
-    private _mailgunService: any;
-
     constructor(
         private _config: Configuration,
         private _log: Logger
     ) {
-        this._mailgunService = Mailgun({
-            apiKey: this._config.mail.apiKey,
-            domain: this._config.mail.domain
-        });
+        Sendgrid.setApiKey(this._config.mail.sendgridAPIKey);
     }
 
     async send(conf: IMailConfiguration) {
         if (this._config.debug.preventMailSending) {
             this._log.debug(`Mail skipped by configuration: "${conf.subject}" (${conf.to})`);
+            this._log.debug(JSON.stringify(conf.data, null, 4));
             return;
         }
 
@@ -48,7 +45,7 @@ export class MailService {
         };
 
         return new Promise((resolve, reject) => {
-            this._mailgunService.messages().send(mailData, (err, body) => {
+            Sendgrid.send(mailData, false, (err, body) => {
                 this._log.info(`Mail sent: "${mailData.subject}" (${mailData.to})`);
                 if (err) return reject(err);
                 resolve(body);

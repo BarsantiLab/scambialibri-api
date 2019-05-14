@@ -41,6 +41,8 @@ export class Logger {
 
         this.log.info(`Current environment: ${process.env.NODE_ENV}`);
         this.log.info(`Logger: log level ${this._config.log.level}`);
+
+        if (this._config.debug.preventMailSending) this.log.debug('preventMailSending is TRUE: mails will not be sent!');
     }
 
     error(message) {

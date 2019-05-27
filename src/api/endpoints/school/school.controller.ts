@@ -46,13 +46,24 @@ export class SchoolController {
             const grades: IGrade[] = await Grade.find({
                 school: req.params.school,
                 specialization: req.params.spec
-            });
+            }).populate(req.query.populate || '');
 
-            res.send(grades.map((e: any) => ({
-                id: e._id.toString(),
-                year: e.year,
-                section: e.section
-            })));
+            res.send(grades.map((e: any) => {
+               const outObj: any = {
+                    id: e._id.toString(),
+                    year: e.year,
+                    section: e.section
+               };
+
+               if (e.specialization) {
+                   outObj.specialization = {
+                       id: e.specialization._id.toString(),
+                       name: e.specialization.name
+                   };
+               }
+
+               return outObj;
+            }));
         } catch (err) {
             next(err);
         }

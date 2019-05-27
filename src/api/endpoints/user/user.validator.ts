@@ -23,6 +23,11 @@ export class UserValidator {
         }, next);
     }
 
+    updateUser(req, res, next) {
+        // TODO: write validation tests
+        next();
+    }
+
     getUser(req, res, next) {
         validate([{
             object: req.params,

@@ -79,6 +79,25 @@ export class UserController {
         }
     }
 
+    async updateUser(req, res, next) {
+        console.log(req.user);
+        res.send({
+            status: 'ok'
+        });
+
+        try {
+            // const user: IUser = await User.findOne({ id: req.params.id })
+            await User.update({
+                _id: req.user._id
+            }, {
+                currentGrade: req.body.currentGrade.id,
+                futureGrade: req.body.futureGrade.id
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+
     async completeOnboarding(req, res, next) {
         try {
             const user: IUser = await User.findOne({ confirmationToken: req.query.token });
@@ -147,7 +166,7 @@ export class UserController {
 
     async getUser(req, res, next) {
         try {
-            const user: IUser = await User.findById(req.params.id).populate(req.query.populate);
+            const user: IUser = await User.findById(req.params.id).populate(req.query.populate || '');
             if (!user) throw new ApiError(ErrorCode.UserNotFound, { id: req.params.id });
 
             // TODO: sanitize output

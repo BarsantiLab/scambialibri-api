@@ -29,7 +29,6 @@ export class Policy {
     }
 
     private _isAdministrator(req, res): Promise<any> {
-        console.log('here');
         return new Promise((resolve, reject) => {
             passport.authenticate('bearer')(req, res, () => {
                 console.log(req.user);

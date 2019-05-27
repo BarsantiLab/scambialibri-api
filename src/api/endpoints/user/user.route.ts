@@ -109,5 +109,11 @@ export class UserRoute {
             this._validator.setNewPassword,
             this._ctrl.setNewPassword.bind(this)
         );
+
+        router.post('/user',
+            this._policy.is(Role.authenticated),
+            this._validator.updateUser,
+            this._ctrl.updateUser.bind(this)
+        );
     }
 }

@@ -6,7 +6,7 @@ const _ = require('lodash');
 
 const URL = 'mongodb://localhost:27017';
 const DB_NAME = 'ScambialibriDev';
-const FILE = 'tito-caro';
+const FILE = 'tito-caro-2019-1';
 const SCHOOL_NAME = 'Liceo "Tito Lucrezio Caro"';
 
 MongoClient.connect(URL, (err, client) => {
@@ -18,7 +18,7 @@ MongoClient.connect(URL, (err, client) => {
     let books = [];
 
     csv.fromPath(`import-data/${FILE}.csv`, {
-        delimiter: ';'
+        delimiter: ','
     }).on('data', (data) => {
         grades.push({
             year: parseInt(data[0]),
@@ -48,51 +48,114 @@ MongoClient.connect(URL, (err, client) => {
 
         async.series({
             school: cb => {
-                db.collection('schools').insertOne({
-                    name: SCHOOL_NAME,
-                    specializations: []
-                }, (err, res) => {
+                console.log('- Looking for school...');
+                db.collection('schools').findOne({
+                    name: SCHOOL_NAME
+                }, (err, school) => {
                     if (err) return cb(err);
-                    schoolId = res.insertedId;
-                    cb();
+                    if (school) {
+                        console.log('   - School found!')
+                        schoolId = school._id;
+                        cb();
+                    } else {
+                        console.log('   - School not found, creating new school...');
+                        db.collection('schools').insertOne({
+                            name: SCHOOL_NAME,
+                            specializations: []
+                        }, (err, res) => {
+                            if (err) return cb(err);
+                            console.log('   School created!');
+                            schoolId = res.insertedId;
+                            cb();
+                        });
+                    }
                 });
             },
 
             specs: cb => {
+                console.log('- Looking for specializations...');
                 specs = _.uniqBy(specs, 'name');
-                db.collection('specializations').insertMany(specs.map(e => ({
-                    name: e.name,
-                    school: schoolId
-                })), (err, res) => {
-                    if (err) return cb(err);
-                    specDocs = res.ops;
 
-                    db.collection('schools').update({
-                        _id: ObjectId(schoolId)
-                    }, {
-                        $set: {
-                            specializations: specDocs.map(e => ObjectId(e._id))
+                async.eachSeries(specs, (spec, specCb) => {
+                    db.collection('specializations').findOne({
+                        name: spec.name,
+                        school: schoolId
+                    }, (err, dbSpec) => {
+                        if (err) return specCb(err);
+
+                        if (dbSpec) {
+                            console.log(`   - Specialization ${spec.name} found!`);
+                            specDocs.push(dbSpec);
+                            specCb();
+                        } else {
+                            console.log(`   - Specialization ${spec.name} not found, creating...`);
+                            
+                            db.collection('specializations').insert({
+                                name: spec.name,
+                                school: schoolId
+                            }, (err, res) => {
+                                if (err) return cb(err);
+                                // TODO: test return value
+                                specDocs.push(res.ops[0]);
+
+                                db.collection('schools').update({
+                                    _id: ObjectId(schoolId)
+                                }, {
+                                    $push: {
+                                        specializations: ObjectId(schoolId)
+                                    }
+                                }, (err) => specCb(err));
+                            });
                         }
-                    }, cb);
-                });
+                    });
+                }, (err) => cb(err));
             },
 
             grades: cb => {
+                console.log('- Looking for grades');
+
                 grades = _.uniqBy(grades, e => e.year + e.section + e.specialization);
-                db.collection('grades').insertMany(grades.map(e =>({
-                    year: e.year,
-                    section: e.section,
-                    specialization: specDocs.find(k => k.name === e.specialization)._id,
-                    school: schoolId,
-                    books: []
-                })), (err, res) => {
-                    if (err) return cb(err);
-                    gradeDocs = res.ops;
-                    cb();
-                });
+
+                async.eachSeries(grades, (grade, gradeCb) => {
+                    db.collection('grades').findOne({
+                        year: grade.year,
+                        section: grade.section,
+                        specialization: specDocs.find(k => k.name === grade.specialization)._id,
+                        school: schoolId
+                    }, (err, gradeDoc) => {
+                        if (err) return gradeCb(err);
+
+                        if (gradeDoc) {
+                            console.log(`   - Grade ${grade.year}${grade.section} (${grade.specialization}) found!`);
+
+                            gradeDocs.push(gradeDoc);
+                            gradeCb();
+                        } else {
+                            console.log(`   - Grade ${grade.year}${grade.section} (${grade.specialization}) not found, creating...`);
+
+                            db.collection('grades').insert({
+                                year: grade.year,
+                                section: grade.section,
+                                specialization: specDocs.find(k => k.name === grade.specialization)._id,
+                                school: schoolId,
+                                books: []
+                            }, (err, newGrade) => {
+                                console.log('   - Grade created!');
+
+                                // TODO: test return value
+                                gradeDocs.push(newGrade.ops[0]);
+                                gradeCb();
+                            });
+                        }
+                    });
+                }, err => cb(err));
             },
 
             books: cb => {
+                console.log('- Looking for books');
+
+                const bookDocs = [];
+
                 const group = _.groupBy(books, 'isbn');
                 const out = _.uniqBy(books, 'isbn').map(e => {
                     e.grades = group[e.isbn].map(k => _.pick(k, ['year', 'section', 'specialization']));
@@ -107,38 +170,72 @@ MongoClient.connect(URL, (err, client) => {
         
                     return e;
                 });
-                
-                db.collection('books').insertMany(out.map(e => _.pick(e, [
-                    'isbn', 'author', 'title', 'subtitle', 'price'
-                ])), (err, res) => {
-                    if (err) return cb(err);
-                    
-                    async.eachSeries(out, (e, bookCb) => {
-                        const gradeIds = [];
 
-                        async.eachSeries(e.grades, (grade, gradeCb) => {
+                async.eachSeries(out, (book, bookCb) => {
+                    db.collection('books').findOne({
+                        isbn: book.isbn
+                    }, (err, bookDoc) => {
+                        if (err) return bookCb(err);
+
+                        if (bookDoc) {
+                            console.log(`   - Book '${book.title}' found!`);
+
+                            bookDocs.push(bookDoc);
+                            bookCb();
+                        } else {
+                            console.log(`   - Book '${book.title}' not found, creating...`);
+
+                            db.collection('books').insert(_.pick(book, [
+                                'isbn', 'author', 'title', 'subtitle', 'price'
+                            ]), (err, bookDoc) => {
+                                if (err) return bookCb(err);
+                                bookDocs.push(bookDoc.ops[0]);
+                                bookCb();
+                            });
+                        }
+                    });
+                }, err => {
+                    console.log('- Associating books with grades');
+                    if (err) return cb(err);
+
+                    async.eachSeries(books, (book, bookCb) => {
+                        const gradeIds = [];
+                        const bookDoc = bookDocs.find(k => k.isbn === book.isbn);
+
+                        async.eachSeries(book.grades, (grade, gradeCb) => {
                             db.collection('grades').findOne({
                                 specialization: specDocs.find(k => k.name === grade.specialization)._id,
                                 year: grade.year,
                                 section: grade.section
-                            }, (err, data) => {
+                            }, (err, gradeDoc) => {
                                 if (err) return gradeCb(err);
 
-                                gradeIds.push(data._id);
-                                
-                                db.collection('grades').findOneAndUpdate({
-                                    _id: data._id
-                                }, {
-                                    $push: {
-                                        books: res.ops.find(k => k.isbn === e.isbn)._id
-                                    }
-                                }, gradeCb);
+                                gradeIds.push(gradeDoc._id);
+                                const gradeBookId = gradeDoc.books.find(k => k.toString() === bookDoc._id.toString());
+
+                                if (gradeBookId) {
+                                    console.log(`   - Book '${book.title}' found in ${gradeDoc.year}${gradeDoc.section} (${grade.specialization})!`);
+                                    gradeCb();
+                                } else {
+                                    console.log(`   - Book '${book.title}' not found in ${gradeDoc.year}${gradeDoc.section} (${grade.specialization}), adding...`);
+
+                                    db.collection('grades').findOneAndUpdate({
+                                        _id: gradeDoc._id
+                                    }, {
+                                        $push: {
+                                            books: bookDoc._id
+                                        }
+                                    }, (err) => {
+                                        console.log('   - Book added!');
+                                        gradeCb(err);
+                                    });
+                                }
                             });
                         }, (err) => {
                             if (err) return bookCb(err);
 
                             db.collection('books').findOneAndUpdate({
-                                _id: res.ops.find(k => k.isbn === e.isbn)._id
+                                _id: bookDoc._id
                             }, {
                                 $set: {
                                     grades: gradeIds

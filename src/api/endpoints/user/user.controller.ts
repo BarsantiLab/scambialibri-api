@@ -80,16 +80,17 @@ export class UserController {
     }
 
     async updateUser(req, res, next) {
-        console.log(req.user);
         res.send({
             status: 'ok'
         });
 
         try {
+            // TODO: check if user exists
             // const user: IUser = await User.findOne({ id: req.params.id })
             await User.update({
                 _id: req.user._id
             }, {
+                specialization: req.body.specialization.id,
                 currentGrade: req.body.currentGrade.id,
                 futureGrade: req.body.futureGrade.id
             });
@@ -170,7 +171,21 @@ export class UserController {
             if (!user) throw new ApiError(ErrorCode.UserNotFound, { id: req.params.id });
 
             // TODO: sanitize output
-            res.send(user);
+            res.send({
+                address: user.address,
+                city: user.city,
+                coords: user.coords,
+                currentGrade: user.currentGrade,
+                firstName: user.firstName,
+                futureGrade: user.futureGrade,
+                lastName: user.lastName,
+                mail: user.mail,
+                phone: user.phone,
+                province: user.province,
+                school: user.school,
+                specialization: user.specialization,
+                zipCode: user.zipCode
+            });
         } catch (err) {
             next(err);
         }

@@ -5,8 +5,8 @@ const csv = require('fast-csv');
 const _ = require('lodash');
 
 const URL = 'mongodb://localhost:27017';
-const DB_NAME = 'ScambialibriDev';
-const FILE = 'tito-caro-2019-1';
+const DB_NAME = 'Scambialibri';
+const FILE = 'tito-caro-2019-2';
 const SCHOOL_NAME = 'Liceo "Tito Lucrezio Caro"';
 
 MongoClient.connect(URL, (err, client) => {

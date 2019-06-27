@@ -37,7 +37,7 @@ const defaultConf = {
         domain: process.env.SL_MAILGUN_DOMAIN,
         baseDomain: process.env.SL_MAIL_DOMAIN,
         from: 'noreply@loscambialibri.it',
-        sendgridAPIKey: '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'
+        sendgridAPIKey: process.env.SL_SENDGRID_API_KEY
     },
 
     mongo: {

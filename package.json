@@ -69,7 +69,7 @@
     "lodash": "^4.17.10",
     "mailgun-js": "^0.16.0",
     "minimist": "^1.2.0",
-    "moment": "^2.22.1",
+    "moment": "^2.29.2",
     "mongoose": "^5.1.6",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",

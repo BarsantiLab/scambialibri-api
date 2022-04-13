@@ -26,7 +26,7 @@
     "@types/request": "^2.47.0",
     "@types/request-promise-native": "^1.0.14",
     "@types/sanitize-html": "^1.14.0",
-    "async": "^2.6.0",
+    "async": "^3.2.2",
     "autoprefixer": "^8.1.0",
     "fast-csv": "^2.4.1",
     "gulp": "^3.9.1",
